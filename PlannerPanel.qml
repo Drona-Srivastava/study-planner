@@ -224,8 +224,8 @@ Item {
       Rectangle {
         id: card
         anchors.centerIn: parent
-        width: Math.min(1120, parent.width - 32)
-        height: Math.min(720, parent.height - 64)
+        width: Math.min(1008, parent.width * 0.9)
+        height: Math.min(648, parent.height * 0.9)
         radius: Style.cornerRadius
         color: Color.menu.background
         border.color: Color.menu.border
@@ -258,7 +258,12 @@ Item {
             Text {
               text: "×"
               color: Color.menu.text
-              font.pixelSize: 24
+              font.pixelSize: 32
+              font.bold: true
+              Layout.preferredWidth: 36
+              Layout.preferredHeight: 36
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
               MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
             }
           }
