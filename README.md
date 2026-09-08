@@ -39,8 +39,8 @@ Type `@` in the task title to open the calendar picker. Type `@@` to open the
 24-hour `HH:MM` format. Existing hyphenated dates remain readable and are
 normalized when saved.
 
-Cards can be dragged between columns. Each card also has a checklist control,
-a `Start` action for moving Backlog to In Progress, and Complete/Reopen actions.
+The board is arranged in three columns. Each card has a checklist control, a
+`Start` action for moving Backlog to In Progress, and Complete/Reopen actions.
 
 ## Reminder settings
 

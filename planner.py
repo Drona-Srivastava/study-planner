@@ -216,14 +216,36 @@ def iso_now() -> str:
     return now().isoformat(timespec="seconds")
 
 
+def display_title(title: str, category: str) -> str:
+    """Use friendly names for timetable classes in the user-facing agenda."""
+    if category != "CLASS":
+        return title
+    upper = title.upper()
+    if "BCSE432E" in upper and "LAB" in upper:
+        return "Drones Lab"
+    if "BCSE432E" in upper:
+        return "RL Class"
+    if "BCSE301L" in upper:
+        return "SEO Class"
+    if "BCSE305L" in upper:
+        return "Embedded Class"
+    if "BCSE428P" in upper:
+        return "Drones Lab"
+    if "BCSE428L" in upper:
+        return "Drones Class"
+    return title
+
+
 def agenda(con: sqlite3.Connection, date: dt.date | None = None) -> dict[str, object]:
     date = date or now().date()
     weekday = date.weekday()
     rows = con.execute(
-        "SELECT b.*, COALESCE(i.status,'pending') status, COALESCE(i.updated_at,'') updated_at FROM schedule_blocks b LEFT JOIN block_instances i ON i.block_id=b.id AND i.instance_date=? WHERE b.weekday=? AND b.category IN ('GATE','DSA','CLOUD','CONTEST','REVIEW','COLLEGE') ORDER BY b.start_time",
+        "SELECT b.*, COALESCE(i.status,'pending') status, COALESCE(i.updated_at,'') updated_at FROM schedule_blocks b LEFT JOIN block_instances i ON i.block_id=b.id AND i.instance_date=? WHERE b.weekday=? AND b.category IN ('GATE','DSA','CLOUD','CONTEST','REVIEW','CLASS') ORDER BY b.start_time",
         (date.isoformat(), weekday),
     ).fetchall()
     items = [dict(row) for row in rows]
+    for item in items:
+        item["title"] = display_title(item["title"], item["category"])
     event_rows = con.execute("SELECT id,start_time,end_time,title,category FROM events WHERE event_date=? ORDER BY start_time", (date.isoformat(),)).fetchall()
     for event in event_rows:
         items.append({"id": -event["id"], "start_time": event["start_time"], "end_time": event["end_time"], "title": event["title"], "category": event["category"], "status": "pending", "event": True})

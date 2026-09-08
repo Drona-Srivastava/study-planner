@@ -320,7 +320,7 @@ Item {
 
                 Rectangle {
                   Layout.fillWidth: true
-                  height: 104
+                  height: 116
                   radius: 10
                   color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.14)
                   border.color: Color.accent
@@ -365,18 +365,49 @@ Item {
                 }
 
                 Text {
-                  text: root.agendaData.next
-                    ? "NEXT · " + root.agendaData.next.start_time + " · " + root.agendaData.next.title
-                    : "No more actionable blocks today"
-                  color: Color.menu.text
+                  text: "UP NEXT"
+                  color: Color.accent
                   font.family: Style.font.family
-                  wrapMode: Text.WordWrap
+                  font.bold: true
                   Layout.fillWidth: true
                 }
+                Rectangle {
+                  Layout.fillWidth: true
+                  height: root.agendaData.next ? 62 : 46
+                  radius: 8
+                  color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.08)
+                  border.color: root.agendaData.next
+                    ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.42)
+                    : Color.menu.border
+                  RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 12
+                    Text {
+                      text: root.agendaData.next
+                        ? root.agendaData.next.start_time + "–" + root.agendaData.next.end_time
+                        : "—"
+                      color: Color.menu.text
+                      font.family: Style.font.family
+                      font.bold: true
+                      Layout.preferredWidth: 112
+                    }
+                    Text {
+                      text: root.agendaData.next
+                        ? root.agendaData.next.title
+                        : "No more scheduled blocks today"
+                      color: Color.menu.text
+                      opacity: root.agendaData.next ? 1 : 0.65
+                      font.family: Style.font.family
+                      elide: Text.ElideRight
+                      Layout.fillWidth: true
+                    }
+                  }
+                }
                 Text {
-                  text: "TODAY"
+                  text: "TODAY'S SCHEDULE"
                   color: Color.menu.text
-                  opacity: 0.6
+                  opacity: 0.72
                   font.family: Style.font.family
                   font.bold: true
                 }
@@ -385,7 +416,7 @@ Item {
                   delegate: Rectangle {
                     required property var modelData
                     Layout.fillWidth: true
-                    height: 48
+                    height: 56
                     radius: 8
                     color: modelData.status === "completed"
                       ? Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.05)
@@ -400,10 +431,11 @@ Item {
                         onClicked: root.run([checked ? "complete-block" : "uncomplete-block", String(modelData.id)])
                       }
                       Text {
-                        text: modelData.start_time + "  " + modelData.end_time
+                        text: modelData.start_time + "–" + modelData.end_time
                         color: Color.menu.text
                         font.family: Style.font.family
-                        Layout.preferredWidth: 104
+                        font.bold: true
+                        Layout.preferredWidth: 120
                       }
                       Text {
                         text: modelData.title
@@ -413,10 +445,11 @@ Item {
                         Layout.fillWidth: true
                       }
                       Text {
-                        text: modelData.status
+                        text: modelData.category === "CLASS" ? "CLASS" : modelData.status
                         color: modelData.status === "completed" ? Color.accent : Color.menu.text
                         opacity: 0.7
                         font.family: Style.font.family
+                        Layout.preferredWidth: 58
                       }
                     }
                   }
@@ -436,20 +469,12 @@ Item {
                   Layout.fillWidth: true
                   TextField {
                     id: newTask
-                    placeholderText: "Task title — type @ for date or @@ for time"
+                    placeholderText: "Task title"
                     Layout.fillWidth: true
                     onAccepted: root.addTask()
                     onTextChanged: root.scheduleTokenPicker()
                   }
                   Button { text: "Add"; onClicked: root.addTask() }
-                }
-
-                Text {
-                  text: "Drag cards between columns · type @ for a calendar date and @@ for a 24-hour time"
-                  color: Color.menu.text
-                  opacity: 0.6
-                  font.family: Style.font.family
-                  Layout.fillWidth: true
                 }
 
                 RowLayout {
@@ -459,26 +484,19 @@ Item {
 
                   Repeater {
                     model: ["Backlog", "In Progress", "Completed"]
-                    delegate: DropArea {
-                      id: dropColumn
+                    delegate: Rectangle {
+                      id: columnCard
                       required property string modelData
                       property string columnName: modelData
                       property var visibleTasks: root.taskData.filter(function(task) {
-                        return task.column_name === dropColumn.columnName
+                        return task.column_name === columnCard.columnName
                       })
-                      keys: ["study-task"]
                       Layout.fillWidth: true
                       Layout.fillHeight: true
-
-                      Rectangle {
-                        anchors.fill: parent
-                        radius: 10
-                        color: dropColumn.containsDrag
-                          ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.16)
-                          : Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.06)
-                        border.color: dropColumn.containsDrag ? Color.accent : Color.menu.border
-                        border.width: dropColumn.containsDrag ? 2 : 1
-                      }
+                      radius: 10
+                      color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.06)
+                      border.color: Color.menu.border
+                      border.width: 1
 
                       ColumnLayout {
                         anchors.fill: parent
@@ -488,14 +506,14 @@ Item {
                         RowLayout {
                           Layout.fillWidth: true
                           Text {
-                            text: dropColumn.columnName
+                            text: columnCard.columnName
                             color: Color.menu.text
                             font.family: Style.font.family
                             font.bold: true
                           }
                           Item { Layout.fillWidth: true }
                           Text {
-                            text: dropColumn.visibleTasks.length
+                            text: columnCard.visibleTasks.length
                             color: Color.accent
                             font.family: Style.font.family
                           }
@@ -514,7 +532,7 @@ Item {
                             spacing: 7
 
                             Repeater {
-                              model: dropColumn.visibleTasks
+                              model: columnCard.visibleTasks
                               delegate: Rectangle {
                                 id: taskCard
                                 required property var modelData
@@ -522,29 +540,8 @@ Item {
                                 Layout.fillWidth: true
                                 height: taskDetails.implicitHeight + 20
                                 radius: 8
-                                color: cardDragArea.drag.active
-                                  ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.24)
-                                  : Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10)
-                                border.color: cardDragArea.drag.active ? Color.accent : "transparent"
-                                opacity: cardDragArea.drag.active ? 0.78 : 1
-
-                                Drag.active: cardDragArea.drag.active
-                                Drag.keys: ["study-task"]
-                                Drag.hotSpot.x: width / 2
-                                Drag.hotSpot.y: height / 2
-
-                                MouseArea {
-                                  id: cardDragArea
-                                  anchors.fill: parent
-                                  z: -1
-                                  acceptedButtons: Qt.LeftButton
-                                  drag.target: taskCard
-                                  drag.axis: Drag.XAndYAxis
-                                  onReleased: {
-                                    taskCard.x = 0
-                                    taskCard.y = 0
-                                  }
-                                }
+                                color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10)
+                                border.color: "transparent"
 
                                 ColumnLayout {
                                   id: taskDetails
@@ -613,11 +610,6 @@ Item {
                             }
                           }
                         }
-                      }
-
-                      onDropped: function(drop) {
-                        if (drop.source && drop.source.taskId !== undefined)
-                          root.run(["move", String(drop.source.taskId), dropColumn.columnName])
                       }
                     }
                   }
