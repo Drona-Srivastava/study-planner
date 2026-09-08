@@ -675,8 +675,10 @@ Item {
               Layout.fillWidth: true
               Layout.fillHeight: true
               focusPolicy: Qt.NoFocus
-              onPressed: root.datePickerDay = dayNumber
-              onClicked: root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), dayNumber))
+              onClicked: {
+                root.datePickerDay = dayNumber
+                root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), dayNumber))
+              }
             }
           }
         }
