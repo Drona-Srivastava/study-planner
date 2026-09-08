@@ -232,8 +232,8 @@ Item {
       Rectangle {
         id: card
         anchors.centerIn: parent
-        width: Math.min(1120, parent.width - 32)
-        height: Math.min(720, parent.height - 64)
+        width: Math.min(1060, parent.width - 64)
+        height: Math.min(640, parent.height - 96)
         radius: 16
         color: Qt.rgba(Color.menu.background.r, Color.menu.background.g, Color.menu.background.b, 0.97)
         border.color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.42)
@@ -360,7 +360,7 @@ Item {
                         : "NO ACTIVE BLOCK"
                       color: Color.accent
                       font.family: root.uiFont
-                      font.pixelSize: Style.font.bodySmall
+                      font.pixelSize: Style.font.bodySmall + 1
                       font.letterSpacing: 1.1
                       font.bold: true
                     }
@@ -370,7 +370,7 @@ Item {
                         : "No actionable timetable block is active"
                       color: Color.menu.text
                       font.family: root.uiFont
-                      font.pixelSize: Style.font.subtitle
+                      font.pixelSize: Style.font.subtitle + 1
                       font.bold: true
                       elide: Text.ElideRight
                       width: parent.width
@@ -383,7 +383,7 @@ Item {
                           : ""
                         color: Color.menu.text
                         font.family: root.uiFont
-                        font.pixelSize: Style.font.bodySmall
+                        font.pixelSize: Style.font.bodySmall + 1
                       }
                       CheckBox {
                         visible: !!root.agendaData.current
@@ -398,7 +398,7 @@ Item {
                   text: "UP NEXT"
                   color: Color.accent
                   font.family: root.uiFont
-                  font.pixelSize: Style.font.bodySmall
+                  font.pixelSize: Style.font.bodySmall + 1
                   font.letterSpacing: 1.1
                   font.bold: true
                   Layout.fillWidth: true
@@ -421,7 +421,7 @@ Item {
                         : "—"
                       color: Color.menu.text
                       font.family: root.uiFont
-                      font.pixelSize: Style.font.bodySmall
+                      font.pixelSize: Style.font.bodySmall + 1
                       font.bold: true
                       Layout.preferredWidth: 112
                     }
@@ -432,7 +432,7 @@ Item {
                       color: Color.menu.text
                       opacity: root.agendaData.next ? 1 : 0.65
                       font.family: root.uiFont
-                      font.pixelSize: Style.font.subtitle
+                      font.pixelSize: Style.font.subtitle + 1
                       font.bold: true
                       elide: Text.ElideRight
                       Layout.fillWidth: true
@@ -444,7 +444,7 @@ Item {
                   color: Color.menu.text
                   opacity: 0.72
                   font.family: root.uiFont
-                  font.pixelSize: Style.font.bodySmall
+                  font.pixelSize: Style.font.bodySmall + 1
                   font.letterSpacing: 1.1
                   font.bold: true
                 }
@@ -471,7 +471,7 @@ Item {
                         text: modelData.start_time + "–" + modelData.end_time
                         color: Color.menu.text
                         font.family: root.uiFont
-                        font.pixelSize: Style.font.bodySmall
+                        font.pixelSize: Style.font.bodySmall + 1
                         font.bold: true
                         Layout.preferredWidth: 120
                       }
@@ -479,7 +479,7 @@ Item {
                         text: modelData.title
                         color: Color.menu.text
                         font.family: root.uiFont
-                        font.pixelSize: Style.font.subtitle
+                        font.pixelSize: Style.font.subtitle + 1
                         font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -489,7 +489,7 @@ Item {
                         color: modelData.status === "completed" ? Color.accent : Color.menu.text
                         opacity: 0.7
                         font.family: root.uiFont
-                        font.pixelSize: Style.font.bodySmall
+                        font.pixelSize: Style.font.bodySmall + 1
                         font.bold: true
                         Layout.preferredWidth: 58
                       }
@@ -513,7 +513,7 @@ Item {
                     id: newTask
                     placeholderText: "Task title"
                     font.family: root.uiFont
-                    font.pixelSize: Style.font.body
+                    font.pixelSize: Style.font.body + 1
                     Layout.fillWidth: true
                     background: Rectangle {
                       radius: 9
@@ -534,7 +534,7 @@ Item {
                       text: "ADD"
                       color: Color.menu.background
                       font.family: root.uiFont
-                      font.pixelSize: Style.font.bodySmall
+                      font.pixelSize: Style.font.bodySmall + 1
                       font.bold: true
                       font.letterSpacing: 0.8
                     }
@@ -574,7 +574,7 @@ Item {
                             text: columnCard.columnName.toUpperCase()
                             color: Color.menu.text
                             font.family: root.uiFont
-                            font.pixelSize: Style.font.bodySmall
+                            font.pixelSize: Style.font.bodySmall + 1
                             font.letterSpacing: 0.9
                             font.bold: true
                           }
@@ -583,7 +583,7 @@ Item {
                             text: columnCard.visibleTasks.length
                             color: Color.accent
                             font.family: root.uiFont
-                            font.pixelSize: Style.font.bodySmall
+                            font.pixelSize: Style.font.bodySmall + 1
                             font.bold: true
                           }
                         }
@@ -628,7 +628,7 @@ Item {
                                       text: taskCard.modelData.title
                                       color: Color.menu.text
                                       font.family: root.uiFont
-                                      font.pixelSize: Style.font.subtitle
+                                      font.pixelSize: Style.font.subtitle + 1
                                       font.bold: true
                                       wrapMode: Text.WordWrap
                                       Layout.fillWidth: true
