@@ -24,5 +24,16 @@ def test_database_and_tasks():
         con.execute("INSERT INTO tasks(title,created_at) VALUES (?,?)", ("Solve arrays", planner.iso_now()))
         con.commit()
         assert planner.tasks(con)[0]["title"] == "Solve arrays"
+        con.execute("UPDATE tasks SET column_name='To Do'")
+        con.commit()
+        planner.init_db(con)
+        assert planner.tasks(con)[0]["column_name"] == "In Progress"
         con.close()
         planner.STATE_DIR = old
+
+
+def test_due_tokens_and_columns():
+    title, date, time = planner.parse_due_tokens("GATE form due on @14-08-26 @@13:00")
+    assert title == "GATE form due on"
+    assert date == "2026-08-14"
+    assert time == "13:00"

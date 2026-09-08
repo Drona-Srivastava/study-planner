@@ -23,7 +23,22 @@ The database is stored at:
 ```
 
 Timetable blocks and daily completion history are separate from manual tasks.
-Manual tasks use `Backlog`, `To Do`, and `Completed` columns.
+Manual tasks use `Backlog`, `In Progress`, and `Completed` columns. Existing
+`To Do` values are migrated to `In Progress` automatically.
+
+### Due dates and times
+
+Tasks accept either or both of these tokens in the title:
+
+```text
+GATE form due on @14-08-26 @@13:00
+```
+
+`@` adds a due date and `@@` adds a due time. The panel also provides separate
+date and time fields. Dates may use `DD-MM-YY`, `DD-MM-YYYY`, or `YYYY-MM-DD`.
+
+Cards can be dragged between columns. Each card also has a checklist control,
+a `Start` action for moving Backlog to In Progress, and Complete/Reopen actions.
 
 ## Reminder settings
 

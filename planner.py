@@ -85,6 +85,7 @@ def init_db(con: sqlite3.Connection) -> None:
             column_name TEXT NOT NULL DEFAULT 'Backlog',
             category TEXT NOT NULL DEFAULT '',
             due_date TEXT NOT NULL DEFAULT '',
+            due_time TEXT NOT NULL DEFAULT '',
             created_at TEXT NOT NULL,
             completed_at TEXT NOT NULL DEFAULT ''
         );
@@ -101,6 +102,10 @@ def init_db(con: sqlite3.Connection) -> None:
         "notify_missed": "0",
     }
     con.executemany("INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)", defaults.items())
+    columns = {row["name"] for row in con.execute("PRAGMA table_info(tasks)")}
+    if "due_time" not in columns:
+        con.execute("ALTER TABLE tasks ADD COLUMN due_time TEXT NOT NULL DEFAULT ''")
+    con.execute("UPDATE tasks SET column_name='In Progress' WHERE column_name='To Do'")
     con.commit()
 
 
@@ -281,7 +286,29 @@ def due_notifications(con: sqlite3.Connection) -> list[dict[str, str]]:
 
 
 def tasks(con: sqlite3.Connection) -> list[dict[str, object]]:
-    return [dict(row) for row in con.execute("SELECT * FROM tasks ORDER BY CASE column_name WHEN 'Backlog' THEN 0 WHEN 'To Do' THEN 1 ELSE 2 END, id DESC")]
+    return [dict(row) for row in con.execute("SELECT * FROM tasks ORDER BY CASE column_name WHEN 'Backlog' THEN 0 WHEN 'In Progress' THEN 1 ELSE 2 END, id DESC")]
+
+
+def parse_due_tokens(title: str, due_date: str = "", due_time: str = "") -> tuple[str, str, str]:
+    time_match = re.search(r"@@\{?([01]?\d|2[0-3]):([0-5]\d)\}?", title)
+    date_match = re.search(r"(?<!@)@\{?(\d{1,2}-\d{1,2}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", title)
+    if not due_time and time_match:
+        due_time = f"{int(time_match.group(1)):02d}:{time_match.group(2)}"
+    if not due_date and date_match:
+        raw = date_match.group(1)
+        try:
+            parsed = dt.datetime.strptime(raw, "%Y-%m-%d") if raw.count("-") == 2 and len(raw.split("-")[0]) == 4 else dt.datetime.strptime(raw, "%d-%m-%y" if len(raw.split("-")[-1]) == 2 else "%d-%m-%Y")
+            due_date = parsed.date().isoformat()
+        except ValueError:
+            fail("Due date must use DD-MM-YY, DD-MM-YYYY, or YYYY-MM-DD")
+    if due_time:
+        try:
+            due_time = dt.datetime.strptime(due_time, "%H:%M").strftime("%H:%M")
+        except ValueError:
+            fail("Due time must use HH:MM")
+    title = re.sub(r"@@\{?(?:[01]?\d|2[0-3]):[0-5]\d\}?", "", title)
+    title = re.sub(r"(?<!@)@\{?(?:\d{1,2}-\d{1,2}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", "", title)
+    return re.sub(r"\s+", " ", title).strip(), due_date, due_time
 
 
 def command(args: argparse.Namespace) -> None:
@@ -299,7 +326,7 @@ def command(args: argparse.Namespace) -> None:
     elif args.action == "stats":
         ensure_ready(con)
         counts = {row["column_name"]: row["count"] for row in con.execute("SELECT column_name,COUNT(*) count FROM tasks GROUP BY column_name")}
-        emit({"ok": True, "backlog": counts.get("Backlog", 0), "todo": counts.get("To Do", 0), "completed": counts.get("Completed", 0), "remaining": counts.get("Backlog", 0) + counts.get("To Do", 0)})
+        emit({"ok": True, "backlog": counts.get("Backlog", 0), "in_progress": counts.get("In Progress", 0), "todo": counts.get("In Progress", 0), "completed": counts.get("Completed", 0), "remaining": counts.get("Backlog", 0) + counts.get("In Progress", 0)})
     elif args.action == "settings":
         if args.key and args.value is not None:
             allowed = {"lead_minutes", "notify_at_start", "notify_missed"}
@@ -313,11 +340,18 @@ def command(args: argparse.Namespace) -> None:
         values = {row["key"]: row["value"] for row in con.execute("SELECT key,value FROM settings WHERE key IN ('timezone','lead_minutes','notify_at_start','notify_missed')")}
         emit({"ok": True, "settings": values})
     elif args.action == "add":
-        con.execute("INSERT INTO tasks(title,details,column_name,category,due_date,created_at) VALUES(?,?,?,?,?,?)", (args.title, args.details or "", args.column or "Backlog", args.category or "", args.due or "", iso_now()))
+        title, due_date, due_time = parse_due_tokens(args.title, args.due or "", args.due_time or "")
+        if not title:
+            fail("Task title cannot be empty")
+        column = {"To Do": "In Progress"}.get(args.column or "Backlog", args.column or "Backlog")
+        if column not in {"Backlog", "In Progress", "Completed"}:
+            fail("Invalid column")
+        con.execute("INSERT INTO tasks(title,details,column_name,category,due_date,due_time,created_at) VALUES(?,?,?,?,?,?,?)", (title, args.details or "", column, args.category or "", due_date, due_time, iso_now()))
         con.commit(); emit({"ok": True})
     elif args.action == "move":
-        if args.column not in {"Backlog", "To Do", "Completed"}: fail("Invalid column")
-        con.execute("UPDATE tasks SET column_name=?, completed_at=? WHERE id=?", (args.column, iso_now() if args.column == "Completed" else "", args.id)); con.commit(); emit({"ok": True})
+        column = {"To Do": "In Progress"}.get(args.column, args.column)
+        if column not in {"Backlog", "In Progress", "Completed"}: fail("Invalid column")
+        con.execute("UPDATE tasks SET column_name=?, completed_at=? WHERE id=?", (column, iso_now() if column == "Completed" else "", args.id)); con.commit(); emit({"ok": True})
     elif args.action == "delete":
         con.execute("DELETE FROM tasks WHERE id=?", (args.id,)); con.commit(); emit({"ok": True})
     elif args.action == "complete-block":
@@ -342,7 +376,7 @@ def main() -> None:
     sub = parser.add_subparsers(dest="action", required=True)
     sub.add_parser("init"); sub.add_parser("agenda"); sub.add_parser("tasks"); sub.add_parser("stats"); sub.add_parser("reminders")
     settings = sub.add_parser("settings"); settings.add_argument("key", nargs="?"); settings.add_argument("value", nargs="?")
-    add = sub.add_parser("add"); add.add_argument("title"); add.add_argument("--details"); add.add_argument("--column", default="Backlog"); add.add_argument("--category"); add.add_argument("--due")
+    add = sub.add_parser("add"); add.add_argument("title"); add.add_argument("--details"); add.add_argument("--column", default="Backlog"); add.add_argument("--category"); add.add_argument("--due"); add.add_argument("--due-time")
     move = sub.add_parser("move"); move.add_argument("id", type=int); move.add_argument("column")
     delete = sub.add_parser("delete"); delete.add_argument("id", type=int)
     complete = sub.add_parser("complete-block"); complete.add_argument("id", type=int)
