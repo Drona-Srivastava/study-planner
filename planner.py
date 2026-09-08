@@ -220,7 +220,7 @@ def agenda(con: sqlite3.Connection, date: dt.date | None = None) -> dict[str, ob
     date = date or now().date()
     weekday = date.weekday()
     rows = con.execute(
-        "SELECT b.*, COALESCE(i.status,'pending') status FROM schedule_blocks b LEFT JOIN block_instances i ON i.block_id=b.id AND i.instance_date=? WHERE b.weekday=? AND b.category IN ('GATE','DSA','CLOUD','CONTEST','REVIEW','COLLEGE') ORDER BY b.start_time",
+        "SELECT b.*, COALESCE(i.status,'pending') status, COALESCE(i.updated_at,'') updated_at FROM schedule_blocks b LEFT JOIN block_instances i ON i.block_id=b.id AND i.instance_date=? WHERE b.weekday=? AND b.category IN ('GATE','DSA','CLOUD','CONTEST','REVIEW','COLLEGE') ORDER BY b.start_time",
         (date.isoformat(), weekday),
     ).fetchall()
     items = [dict(row) for row in rows]
@@ -366,6 +366,18 @@ def command(args: argparse.Namespace) -> None:
         if args.id > 0:
             con.execute("INSERT INTO block_instances(instance_date,block_id,status,updated_at) VALUES(?,?,?,?) ON CONFLICT(instance_date,block_id) DO UPDATE SET status=excluded.status,updated_at=excluded.updated_at", (now().date().isoformat(), args.id, "completed", iso_now())); con.commit()
         emit({"ok": True})
+    elif args.action == "uncomplete-block":
+        row = con.execute("SELECT status,updated_at FROM block_instances WHERE instance_date=? AND block_id=?", (now().date().isoformat(), args.id)).fetchone()
+        if not row or row["status"] != "completed":
+            fail("Block is not completed")
+        try:
+            completed_at = dt.datetime.fromisoformat(row["updated_at"])
+            if (now() - completed_at).total_seconds() > 180:
+                fail("Completion can only be undone within 3 minutes")
+        except ValueError:
+            fail("Invalid completion timestamp")
+        con.execute("UPDATE block_instances SET status='pending',updated_at=? WHERE instance_date=? AND block_id=?", (iso_now(), now().date().isoformat(), args.id)); con.commit()
+        emit({"ok": True})
     elif args.action == "reminders":
         ensure_ready(con)
         notifications = due_notifications(con)
@@ -388,6 +400,7 @@ def main() -> None:
     move = sub.add_parser("move"); move.add_argument("id", type=int); move.add_argument("column")
     delete = sub.add_parser("delete"); delete.add_argument("id", type=int)
     complete = sub.add_parser("complete-block"); complete.add_argument("id", type=int)
+    uncomplete = sub.add_parser("uncomplete-block"); uncomplete.add_argument("id", type=int)
     try: command(parser.parse_args())
     except sqlite3.Error as exc: fail(f"Database error: {exc}")
 

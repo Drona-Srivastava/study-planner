@@ -124,6 +124,13 @@ Item {
     return (future ? "Due in " : "Overdue by ") + text.trim()
   }
 
+  function blockCanUndo(updatedAt) {
+    if (!updatedAt)
+      return false
+    var completedAt = new Date(updatedAt).getTime()
+    return isFinite(completedAt) && new Date().getTime() - completedAt <= 180000
+  }
+
   function insertDate(date) {
     var day = String(date.getDate()).padStart(2, "0")
     var month = String(date.getMonth() + 1).padStart(2, "0")
@@ -258,10 +265,10 @@ Item {
             Text {
               text: "×"
               color: Color.menu.text
-              font.pixelSize: 28
+              font.pixelSize: 36
               font.bold: true
-              Layout.preferredWidth: 30
-              Layout.preferredHeight: 32
+              Layout.preferredWidth: 42
+              Layout.preferredHeight: 42
               horizontalAlignment: Text.AlignHCenter
               verticalAlignment: Text.AlignVCenter
               MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
@@ -356,8 +363,7 @@ Item {
                       CheckBox {
                         visible: !!root.agendaData.current
                         text: "done"
-                        onClicked: if (checked)
-                          root.run(["complete-block", String(root.agendaData.current.id)])
+                        onClicked: root.run([checked ? "complete-block" : "uncomplete-block", String(root.agendaData.current.id)])
                       }
                     }
                   }
@@ -392,11 +398,17 @@ Item {
                     RowLayout {
                       anchors.fill: parent
                       anchors.margins: 10
+                      CheckBox {
+                        visible: !modelData.event
+                        checked: modelData.status === "completed"
+                        enabled: modelData.status !== "completed" || root.blockCanUndo(modelData.updated_at)
+                        onClicked: root.run([checked ? "complete-block" : "uncomplete-block", String(modelData.id)])
+                      }
                       Text {
                         text: modelData.start_time + "  " + modelData.end_time
                         color: Color.menu.text
                         font.family: Style.font.family
-                        Layout.preferredWidth: 118
+                        Layout.preferredWidth: 104
                       }
                       Text {
                         text: modelData.title
