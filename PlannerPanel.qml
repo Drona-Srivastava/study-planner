@@ -220,7 +220,7 @@ Item {
     Rectangle {
       anchors.fill: parent
       color: Qt.rgba(0, 0, 0, 0.42)
-      MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
+      MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.dismiss() }
     }
 
     Item {
@@ -287,7 +287,7 @@ Item {
                 font.pixelSize: 23
                 font.bold: true
               }
-              MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
+              MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.dismiss() }
             }
           }
 
@@ -314,7 +314,7 @@ Item {
                   font.bold: true
                   font.letterSpacing: 0.8
                 }
-                MouseArea { anchors.fill: parent; onClicked: root.tab = parent.modelData }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.tab = parent.modelData }
               }
             }
           }
@@ -389,6 +389,7 @@ Item {
                         visible: !!root.agendaData.current
                         text: "done"
                         onClicked: root.run([checked ? "complete-block" : "uncomplete-block", String(root.agendaData.current.id)])
+                        HoverHandler { cursorShape: Qt.PointingHandCursor }
                       }
                     }
                   }
@@ -466,6 +467,7 @@ Item {
                         checked: modelData.status === "completed"
                         enabled: modelData.status !== "completed" || root.blockCanUndo(modelData.updated_at)
                         onClicked: root.run([checked ? "complete-block" : "uncomplete-block", String(modelData.id)])
+                        HoverHandler { cursorShape: Qt.PointingHandCursor }
                       }
                       Text {
                         text: modelData.start_time + "–" + modelData.end_time
@@ -538,7 +540,7 @@ Item {
                       font.bold: true
                       font.letterSpacing: 0.8
                     }
-                    MouseArea { anchors.fill: parent; onClicked: root.addTask() }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.addTask() }
                   }
                 }
 
@@ -623,6 +625,7 @@ Item {
                                     CheckBox {
                                       checked: taskCard.modelData.column_name === "Completed"
                                       onClicked: root.run(["move", String(taskCard.taskId), checked ? "Completed" : "In Progress"])
+                                      HoverHandler { cursorShape: Qt.PointingHandCursor }
                                     }
                                     Text {
                                       text: taskCard.modelData.title
@@ -649,16 +652,19 @@ Item {
                                       visible: taskCard.modelData.column_name === "Backlog"
                                       text: "START"
                                       onClicked: root.run(["move", String(taskCard.taskId), "In Progress"])
+                                      HoverHandler { cursorShape: Qt.PointingHandCursor }
                                     }
                                     Button {
                                       visible: taskCard.modelData.column_name !== "Completed"
                                       text: "COMPLETE"
                                       onClicked: root.run(["move", String(taskCard.taskId), "Completed"])
+                                      HoverHandler { cursorShape: Qt.PointingHandCursor }
                                     }
                                     Button {
                                       visible: taskCard.modelData.column_name === "Completed"
                                       text: "REOPEN"
                                       onClicked: root.run(["move", String(taskCard.taskId), "In Progress"])
+                                      HoverHandler { cursorShape: Qt.PointingHandCursor }
                                     }
                                     Item { Layout.fillWidth: true }
                                     Rectangle {
@@ -677,6 +683,7 @@ Item {
                                       }
                                       MouseArea {
                                         anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
                                         onClicked: root.run(["delete", String(taskCard.taskId)])
                                       }
                                     }
@@ -756,7 +763,7 @@ Item {
         }
         RowLayout {
           Layout.fillWidth: true
-          Button { text: "‹"; onClicked: root.shiftPickerMonth(-1) }
+          Button { text: "‹"; onClicked: root.shiftPickerMonth(-1); HoverHandler { cursorShape: Qt.PointingHandCursor } }
           Text {
             text: root.monthNames[root.datePickerMonth.getMonth()] + " " + root.datePickerMonth.getFullYear()
             color: Color.menu.text
@@ -765,7 +772,7 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             Layout.fillWidth: true
           }
-          Button { text: "›"; onClicked: root.shiftPickerMonth(1) }
+          Button { text: "›"; onClicked: root.shiftPickerMonth(1); HoverHandler { cursorShape: Qt.PointingHandCursor } }
         }
         GridLayout {
           columns: 7
@@ -805,6 +812,7 @@ Item {
               MouseArea {
                 anchors.fill: parent
                 enabled: parent.enabled
+                cursorShape: Qt.PointingHandCursor
                 onClicked: {
                   root.datePickerDay = parent.dayNumber
                   root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), parent.dayNumber))
@@ -813,7 +821,7 @@ Item {
             }
           }
         }
-        Button { text: "Cancel"; Layout.alignment: Qt.AlignRight; onClicked: datePopup.close() }
+        Button { text: "Cancel"; Layout.alignment: Qt.AlignRight; onClicked: datePopup.close(); HoverHandler { cursorShape: Qt.PointingHandCursor } }
       }
     }
 
@@ -894,13 +902,13 @@ Item {
               x: 64; width: 24; height: 28
               color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22)
               Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }
-              MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.min(hourPicker.to, hourPicker.value + 1) }
+              MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: hourPicker.value = Math.min(hourPicker.to, hourPicker.value + 1) }
             }
             down.indicator: Rectangle {
               x: 64; y: 28; width: 24; height: 28
               color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
               Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }
-              MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.max(hourPicker.from, hourPicker.value - 1) }
+              MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: hourPicker.value = Math.max(hourPicker.from, hourPicker.value - 1) }
             }
           }
           Text { text: ":"; color: Color.menu.text; font.pixelSize: 26; font.bold: true }
@@ -921,21 +929,21 @@ Item {
               x: 64; width: 24; height: 28
               color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22)
               Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }
-              MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.min(minutePicker.to, minutePicker.value + 1) }
+              MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: minutePicker.value = Math.min(minutePicker.to, minutePicker.value + 1) }
             }
             down.indicator: Rectangle {
               x: 64; y: 28; width: 24; height: 28
               color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
               Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }
-              MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.max(minutePicker.from, minutePicker.value - 1) }
+              MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: minutePicker.value = Math.max(minutePicker.from, minutePicker.value - 1) }
             }
           }
         }
         RowLayout {
           Layout.fillWidth: true
           Item { Layout.fillWidth: true }
-          Button { text: "Cancel"; onClicked: timePopup.close() }
-          Button { text: "Use time"; onClicked: root.insertTime() }
+          Button { text: "Cancel"; onClicked: timePopup.close(); HoverHandler { cursorShape: Qt.PointingHandCursor } }
+          Button { text: "Use time"; onClicked: root.insertTime(); HoverHandler { cursorShape: Qt.PointingHandCursor } }
         }
       }
     }
