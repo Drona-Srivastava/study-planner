@@ -295,23 +295,27 @@ def parse_due_tokens(title: str, due_date: str = "", due_time: str = "") -> tupl
     due_time = re.sub(r"^@@\{?", "", due_time.strip())
     due_time = re.sub(r"\}?$", "", due_time)
     time_match = re.search(r"@@\{?([01]?\d|2[0-3]):([0-5]\d)\}?", title)
-    date_match = re.search(r"(?<!@)@\{?(\d{1,2}-\d{1,2}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", title)
+    date_match = re.search(r"(?<!@)@\{?(\d{1,2}[-/]\d{1,2}[-/](?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", title)
     if not due_time and time_match:
         due_time = f"{int(time_match.group(1)):02d}:{time_match.group(2)}"
     raw_date = due_date or (date_match.group(1) if date_match else "")
     if raw_date:
         try:
-            parsed = dt.datetime.strptime(raw_date, "%Y-%m-%d") if raw_date.count("-") == 2 and len(raw_date.split("-")[0]) == 4 else dt.datetime.strptime(raw_date, "%d-%m-%y" if len(raw_date.split("-")[-1]) == 2 else "%d-%m-%Y")
+            if raw_date.count("-") == 2 and len(raw_date.split("-")[0]) == 4:
+                parsed = dt.datetime.strptime(raw_date, "%Y-%m-%d")
+            else:
+                year_length = len(re.split(r"[-/]", raw_date)[-1])
+                parsed = dt.datetime.strptime(raw_date.replace("/", "-"), "%d-%m-%y" if year_length == 2 else "%d-%m-%Y")
             due_date = parsed.date().isoformat()
         except ValueError:
-            fail("Due date must use DD-MM-YY, DD-MM-YYYY, or YYYY-MM-DD")
+            fail("Due date must use DD/MM/YY")
     if due_time:
         try:
             due_time = dt.datetime.strptime(due_time, "%H:%M").strftime("%H:%M")
         except ValueError:
             fail("Due time must use HH:MM")
     title = re.sub(r"@@\{?(?:[01]?\d|2[0-3]):[0-5]\d\}?", "", title)
-    title = re.sub(r"(?<!@)@\{?(?:\d{1,2}-\d{1,2}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", "", title)
+    title = re.sub(r"(?<!@)@\{?(?:\d{1,2}[-/]\d{1,2}[-/](?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", "", title)
     return re.sub(r"\s+", " ", title).strip(), due_date, due_time
 
 

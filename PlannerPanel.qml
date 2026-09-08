@@ -51,15 +51,41 @@ Item {
     if (title === "")
       return
 
-    var args = ["add", title, "--column", "Backlog"]
-    if (newTaskDate.text.trim() !== "")
-      args = args.concat(["--due", newTaskDate.text.trim()])
-    if (newTaskTime.text.trim() !== "")
-      args = args.concat(["--due-time", newTaskTime.text.trim()])
-    root.run(args)
+    root.run(["add", title, "--column", "Backlog"])
     newTask.text = ""
-    newTaskDate.text = ""
-    newTaskTime.text = ""
+  }
+
+  function displayDate(value) {
+    var match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    return match ? match[3] + "/" + match[2] + "/" + match[1].slice(2) : String(value || "")
+  }
+
+  function showTokenPicker() {
+    var value = newTask.text
+    if (value.endsWith("@@")) {
+      datePopup.close()
+      timePopup.open()
+    } else if (value.endsWith("@")) {
+      timePopup.close()
+      datePopup.open()
+    }
+  }
+
+  function insertDate(date) {
+    var day = String(date.getDate()).padStart(2, "0")
+    var month = String(date.getMonth() + 1).padStart(2, "0")
+    var year = String(date.getFullYear()).slice(-2)
+    newTask.text = newTask.text.slice(0, -1) + "@" + day + "/" + month + "/" + year
+    datePopup.close()
+    newTask.forceActiveFocus()
+  }
+
+  function insertTime() {
+    var hour = String(hourPicker.value).padStart(2, "0")
+    var minute = String(minutePicker.value).padStart(2, "0")
+    newTask.text = newTask.text.slice(0, -2) + "@@" + hour + ":" + minute
+    timePopup.close()
+    newTask.forceActiveFocus()
   }
 
   Process {
@@ -156,7 +182,7 @@ Item {
             }
             Item { Layout.fillWidth: true }
             Text {
-              text: root.agendaData.date || ""
+              text: root.displayDate(root.agendaData.date)
               color: Color.menu.text
               opacity: 0.65
               font.family: Style.font.family
@@ -330,29 +356,16 @@ Item {
                   Layout.fillWidth: true
                   TextField {
                     id: newTask
-                    placeholderText: "Task title — @14-08-26 or @@13:00"
+                    placeholderText: "Task title — type @ for date or @@ for time"
                     Layout.fillWidth: true
                     onAccepted: root.addTask()
-                  }
-                  TextField {
-                    id: newTaskDate
-                    placeholderText: "@14-08-26"
-                    Layout.preferredWidth: 125
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Due date: @14-08-26"
-                  }
-                  TextField {
-                    id: newTaskTime
-                    placeholderText: "@@13:00"
-                    Layout.preferredWidth: 100
-                    ToolTip.visible: hovered
-                    ToolTip.text: "Due time: @@13:00"
+                    onTextChanged: root.showTokenPicker()
                   }
                   Button { text: "Add"; onClicked: root.addTask() }
                 }
 
                 Text {
-                  text: "Drag cards between columns · use @ for a due date and @@ for a due time"
+                  text: "Drag cards between columns · type @ for a calendar date and @@ for a 24-hour time"
                   color: Color.menu.text
                   opacity: 0.6
                   font.family: Style.font.family
@@ -463,7 +476,7 @@ Item {
                                   }
                                   Text {
                                     visible: taskCard.modelData.due_date !== "" || taskCard.modelData.due_time !== ""
-                                    text: (taskCard.modelData.due_date !== "" ? "@" + taskCard.modelData.due_date : "")
+                                    text: (taskCard.modelData.due_date !== "" ? "@" + root.displayDate(taskCard.modelData.due_date) : "")
                                       + (taskCard.modelData.due_time !== "" ? "  @@" + taskCard.modelData.due_time : "")
                                     color: Color.accent
                                     font.family: Style.font.family
@@ -506,6 +519,86 @@ Item {
               }
             }
           }
+        }
+      }
+    }
+
+    Popup {
+      id: datePopup
+      width: 360
+      height: 360
+      modal: true
+      focus: true
+      x: Math.round((parent.width - width) / 2)
+      y: Math.round((parent.height - height) / 2)
+      closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+      background: Rectangle {
+        radius: 12
+        color: Color.menu.background
+        border.color: Color.menu.border
+        border.width: 1
+      }
+
+      ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 14
+        spacing: 10
+        Text {
+          text: "SELECT DUE DATE · DD/MM/YY"
+          color: Color.accent
+          font.family: Style.font.family
+          font.bold: true
+        }
+        Calendar {
+          id: dateCalendar
+          Layout.fillWidth: true
+          Layout.fillHeight: true
+          onClicked: function(date) { root.insertDate(date) }
+        }
+        Button { text: "Cancel"; Layout.alignment: Qt.AlignRight; onClicked: datePopup.close() }
+      }
+    }
+
+    Popup {
+      id: timePopup
+      width: 300
+      height: 210
+      modal: true
+      focus: true
+      x: Math.round((parent.width - width) / 2)
+      y: Math.round((parent.height - height) / 2)
+      closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+      background: Rectangle {
+        radius: 12
+        color: Color.menu.background
+        border.color: Color.menu.border
+        border.width: 1
+      }
+
+      ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 18
+        spacing: 12
+        Text {
+          text: "SELECT DUE TIME · 24 HOUR"
+          color: Color.accent
+          font.family: Style.font.family
+          font.bold: true
+        }
+        RowLayout {
+          Layout.alignment: Qt.AlignHCenter
+          spacing: 12
+          SpinBox { id: hourPicker; from: 0; to: 23; value: 13; editable: true }
+          Text { text: ":"; color: Color.menu.text; font.pixelSize: 22 }
+          SpinBox { id: minutePicker; from: 0; to: 59; value: 0; editable: true; stepSize: 5 }
+        }
+        RowLayout {
+          Layout.fillWidth: true
+          Item { Layout.fillWidth: true }
+          Button { text: "Cancel"; onClicked: timePopup.close() }
+          Button { text: "Use time"; onClicked: root.insertTime() }
         }
       }
     }

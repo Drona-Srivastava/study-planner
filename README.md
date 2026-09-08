@@ -31,11 +31,13 @@ Manual tasks use `Backlog`, `In Progress`, and `Completed` columns. Existing
 Tasks accept either or both of these tokens in the title:
 
 ```text
-GATE form due on @14-08-26 @@13:00
+GATE form due on @14/08/26 @@13:00
 ```
 
-`@` adds a due date and `@@` adds a due time. The panel also provides separate
-date and time fields. Dates may use `DD-MM-YY`, `DD-MM-YYYY`, or `YYYY-MM-DD`.
+Type `@` in the task title to open the calendar picker. Type `@@` to open the
+24-hour time picker. Dates are displayed and entered as `DD/MM/YY`; times use
+24-hour `HH:MM` format. Existing hyphenated dates remain readable and are
+normalized when saved.
 
 Cards can be dragged between columns. Each card also has a checklist control,
 a `Start` action for moving Backlog to In Progress, and Complete/Reopen actions.
