@@ -290,6 +290,10 @@ def tasks(con: sqlite3.Connection) -> list[dict[str, object]]:
 
 
 def parse_due_tokens(title: str, due_date: str = "", due_time: str = "") -> tuple[str, str, str]:
+    due_date = re.sub(r"^@\{?", "", due_date.strip())
+    due_date = re.sub(r"\}?$", "", due_date)
+    due_time = re.sub(r"^@@\{?", "", due_time.strip())
+    due_time = re.sub(r"\}?$", "", due_time)
     time_match = re.search(r"@@\{?([01]?\d|2[0-3]):([0-5]\d)\}?", title)
     date_match = re.search(r"(?<!@)@\{?(\d{1,2}-\d{1,2}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", title)
     if not due_time and time_match:
