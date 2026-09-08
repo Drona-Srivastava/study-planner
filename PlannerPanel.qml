@@ -640,7 +640,8 @@ Item {
                                     color: Color.accent
                                     font.family: root.uiFont
                                     font.bold: true
-                                    font.pixelSize: Style.font.caption
+                                    font.pixelSize: Style.font.bodySmall + 1
+                                    opacity: 1
                                   }
                                   RowLayout {
                                     Layout.fillWidth: true
