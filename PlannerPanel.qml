@@ -665,19 +665,30 @@ Item {
           }
           Repeater {
             model: 42
-            delegate: Button {
+            delegate: Rectangle {
               required property int index
               readonly property int dayNumber: index - root.firstDayMondayIndex(root.datePickerMonth) + 1
-              text: dayNumber > 0 && dayNumber <= root.daysInMonth(root.datePickerMonth) ? String(dayNumber) : ""
               enabled: dayNumber > 0 && dayNumber <= root.daysInMonth(root.datePickerMonth)
-              checkable: true
-              checked: enabled && dayNumber === root.datePickerDay
+              radius: 6
+              color: enabled && dayNumber === root.datePickerDay
+                ? Color.accent
+                : Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.08)
+              border.color: enabled && dayNumber === root.datePickerDay ? Color.accent : "transparent"
               Layout.fillWidth: true
               Layout.fillHeight: true
-              focusPolicy: Qt.NoFocus
-              onClicked: {
-                root.datePickerDay = dayNumber
-                root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), dayNumber))
+              Text {
+                anchors.centerIn: parent
+                text: parent.enabled ? String(parent.dayNumber) : ""
+                color: parent.dayNumber === root.datePickerDay ? Color.menu.background : Color.menu.text
+                font.family: Style.font.family
+              }
+              MouseArea {
+                anchors.fill: parent
+                enabled: parent.enabled
+                onClicked: {
+                  root.datePickerDay = parent.dayNumber
+                  root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), parent.dayNumber))
+                }
               }
             }
           }
