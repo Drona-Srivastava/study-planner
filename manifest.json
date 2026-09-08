@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "study-planner",
+  "name": "Study Planner",
+  "version": "0.1.0",
+  "author": "Local",
+  "license": "MIT",
+  "description": "GATE and placement timetable reminders with a local Kanban board",
+  "kinds": ["bar-widget", "panel", "service"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "barWidget": "BarWidget.qml",
+    "panel": "PlannerPanel.qml",
+    "service": "PlannerService.qml"
+  },
+  "barWidget": {
+    "displayName": "Study Planner",
+    "description": "Open the study agenda and Kanban board",
+    "category": "Productivity",
+    "defaultSection": "right",
+    "allowMultiple": false
+  }
+}
