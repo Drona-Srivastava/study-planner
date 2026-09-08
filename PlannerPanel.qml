@@ -21,6 +21,7 @@ Item {
   property int relativeTick: 0
   property var datePickerMonth: new Date()
   property int datePickerDay: new Date().getDate()
+  readonly property string uiFont: Style.font.menuFamily
   readonly property var monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   readonly property string script: Qt.resolvedUrl("planner.py").toString().replace(/^file:\/\//, "")
 
@@ -233,39 +234,59 @@ Item {
         anchors.centerIn: parent
         width: Math.min(1120, parent.width - 32)
         height: Math.min(720, parent.height - 64)
-        radius: Style.cornerRadius
-        color: Color.menu.background
-        border.color: Color.menu.border
+        radius: 16
+        color: Qt.rgba(Color.menu.background.r, Color.menu.background.g, Color.menu.background.b, 0.97)
+        border.color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.42)
         border.width: 1
 
         MouseArea { anchors.fill: parent; onClicked: focusItem.forceActiveFocus() }
 
         ColumnLayout {
           anchors.fill: parent
-          anchors.margins: Style.space(18)
-          spacing: Style.space(12)
+          anchors.margins: Style.space(20)
+          spacing: Style.space(14)
 
           RowLayout {
             Layout.fillWidth: true
-            height: Style.space(36)
+            height: Style.space(40)
             Text {
               text: "STUDY PLANNER"
               color: Color.menu.text
-              font.family: Style.font.family
-              font.pixelSize: Style.font.title
+              font.family: root.uiFont
+              font.pixelSize: Style.font.heading
               font.bold: true
+              font.letterSpacing: 1.4
             }
             Item { Layout.fillWidth: true }
-            Text {
-              text: root.displayDate(root.agendaData.date)
-              color: Color.menu.text
-              opacity: 0.65
-              font.family: Style.font.family
+            Rectangle {
+              implicitWidth: 82
+              implicitHeight: 30
+              radius: 8
+              color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.08)
+              border.color: Color.menu.border
+              Text {
+                anchors.centerIn: parent
+                text: root.displayDate(root.agendaData.date)
+                color: Color.menu.text
+                opacity: 0.82
+                font.family: root.uiFont
+                font.pixelSize: Style.font.bodySmall
+                font.bold: true
+              }
             }
-            Text {
-              text: "×"
-              color: Color.menu.text
-              font.pixelSize: 24
+            Rectangle {
+              implicitWidth: 32
+              implicitHeight: 30
+              radius: 8
+              color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.08)
+              Text {
+                anchors.centerIn: parent
+                text: "×"
+                color: Color.menu.text
+                font.family: root.uiFont
+                font.pixelSize: 23
+                font.bold: true
+              }
               MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
             }
           }
@@ -277,18 +298,21 @@ Item {
               delegate: Rectangle {
                 required property string modelData
                 Layout.fillWidth: true
-                height: 34
-                radius: 8
+                height: 40
+                radius: 10
                 color: root.tab === modelData
                   ? Color.accent
                   : Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.08)
                 Text {
                   anchors.centerIn: parent
-                  text: parent.modelData
+                  text: parent.modelData.toUpperCase()
                   color: root.tab === parent.modelData
                     ? Color.menu.background
                     : Color.menu.text
-                  font.family: Style.font.family
+                  font.family: root.uiFont
+                  font.pixelSize: Style.font.body
+                  font.bold: true
+                  font.letterSpacing: 0.8
                 }
                 MouseArea { anchors.fill: parent; onClicked: root.tab = parent.modelData }
               }
@@ -324,6 +348,7 @@ Item {
                   radius: 10
                   color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.14)
                   border.color: Color.accent
+                  border.width: 1
 
                   Column {
                     anchors.fill: parent
@@ -334,7 +359,9 @@ Item {
                         ? "CURRENT · " + root.agendaData.current.category
                         : "NO ACTIVE BLOCK"
                       color: Color.accent
-                      font.family: Style.font.family
+                      font.family: root.uiFont
+                      font.pixelSize: Style.font.bodySmall
+                      font.letterSpacing: 1.1
                       font.bold: true
                     }
                     Text {
@@ -342,7 +369,9 @@ Item {
                         ? root.agendaData.current.title
                         : "No actionable timetable block is active"
                       color: Color.menu.text
-                      font.family: Style.font.family
+                      font.family: root.uiFont
+                      font.pixelSize: Style.font.subtitle
+                      font.bold: true
                       elide: Text.ElideRight
                       width: parent.width
                     }
@@ -353,7 +382,8 @@ Item {
                           ? root.agendaData.current.start_time + "–" + root.agendaData.current.end_time
                           : ""
                         color: Color.menu.text
-                        font.family: Style.font.family
+                        font.family: root.uiFont
+                        font.pixelSize: Style.font.bodySmall
                       }
                       CheckBox {
                         visible: !!root.agendaData.current
@@ -367,7 +397,9 @@ Item {
                 Text {
                   text: "UP NEXT"
                   color: Color.accent
-                  font.family: Style.font.family
+                  font.family: root.uiFont
+                  font.pixelSize: Style.font.bodySmall
+                  font.letterSpacing: 1.1
                   font.bold: true
                   Layout.fillWidth: true
                 }
@@ -388,7 +420,8 @@ Item {
                         ? root.agendaData.next.start_time + "–" + root.agendaData.next.end_time
                         : "—"
                       color: Color.menu.text
-                      font.family: Style.font.family
+                      font.family: root.uiFont
+                      font.pixelSize: Style.font.bodySmall
                       font.bold: true
                       Layout.preferredWidth: 112
                     }
@@ -398,7 +431,9 @@ Item {
                         : "No more scheduled blocks today"
                       color: Color.menu.text
                       opacity: root.agendaData.next ? 1 : 0.65
-                      font.family: Style.font.family
+                      font.family: root.uiFont
+                      font.pixelSize: Style.font.subtitle
+                      font.bold: true
                       elide: Text.ElideRight
                       Layout.fillWidth: true
                     }
@@ -408,7 +443,9 @@ Item {
                   text: "TODAY'S SCHEDULE"
                   color: Color.menu.text
                   opacity: 0.72
-                  font.family: Style.font.family
+                  font.family: root.uiFont
+                  font.pixelSize: Style.font.bodySmall
+                  font.letterSpacing: 1.1
                   font.bold: true
                 }
                 Repeater {
@@ -433,14 +470,17 @@ Item {
                       Text {
                         text: modelData.start_time + "–" + modelData.end_time
                         color: Color.menu.text
-                        font.family: Style.font.family
+                        font.family: root.uiFont
+                        font.pixelSize: Style.font.bodySmall
                         font.bold: true
                         Layout.preferredWidth: 120
                       }
                       Text {
                         text: modelData.title
                         color: Color.menu.text
-                        font.family: Style.font.family
+                        font.family: root.uiFont
+                        font.pixelSize: Style.font.subtitle
+                        font.bold: true
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                       }
@@ -448,7 +488,9 @@ Item {
                         text: modelData.category === "CLASS" ? "CLASS" : modelData.status
                         color: modelData.status === "completed" ? Color.accent : Color.menu.text
                         opacity: 0.7
-                        font.family: Style.font.family
+                        font.family: root.uiFont
+                        font.pixelSize: Style.font.bodySmall
+                        font.bold: true
                         Layout.preferredWidth: 58
                       }
                     }
@@ -470,11 +512,34 @@ Item {
                   TextField {
                     id: newTask
                     placeholderText: "Task title"
+                    font.family: root.uiFont
+                    font.pixelSize: Style.font.body
                     Layout.fillWidth: true
+                    background: Rectangle {
+                      radius: 9
+                      color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.07)
+                      border.color: newTask.activeFocus ? Color.accent : Color.menu.border
+                      border.width: newTask.activeFocus ? 2 : 1
+                    }
                     onAccepted: root.addTask()
                     onTextChanged: root.scheduleTokenPicker()
                   }
-                  Button { text: "Add"; onClicked: root.addTask() }
+                  Rectangle {
+                    implicitWidth: 72
+                    implicitHeight: 38
+                    radius: 9
+                    color: Color.accent
+                    Text {
+                      anchors.centerIn: parent
+                      text: "ADD"
+                      color: Color.menu.background
+                      font.family: root.uiFont
+                      font.pixelSize: Style.font.bodySmall
+                      font.bold: true
+                      font.letterSpacing: 0.8
+                    }
+                    MouseArea { anchors.fill: parent; onClicked: root.addTask() }
+                  }
                 }
 
                 RowLayout {
@@ -506,16 +571,20 @@ Item {
                         RowLayout {
                           Layout.fillWidth: true
                           Text {
-                            text: columnCard.columnName
+                            text: columnCard.columnName.toUpperCase()
                             color: Color.menu.text
-                            font.family: Style.font.family
+                            font.family: root.uiFont
+                            font.pixelSize: Style.font.bodySmall
+                            font.letterSpacing: 0.9
                             font.bold: true
                           }
                           Item { Layout.fillWidth: true }
                           Text {
                             text: columnCard.visibleTasks.length
                             color: Color.accent
-                            font.family: Style.font.family
+                            font.family: root.uiFont
+                            font.pixelSize: Style.font.bodySmall
+                            font.bold: true
                           }
                         }
 
@@ -540,8 +609,9 @@ Item {
                                 Layout.fillWidth: true
                                 height: taskDetails.implicitHeight + 20
                                 radius: 8
-                                color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10)
-                                border.color: "transparent"
+                                color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.11)
+                                border.color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.16)
+                                border.width: 1
 
                                 ColumnLayout {
                                   id: taskDetails
@@ -557,7 +627,9 @@ Item {
                                     Text {
                                       text: taskCard.modelData.title
                                       color: Color.menu.text
-                                      font.family: Style.font.family
+                                      font.family: root.uiFont
+                                      font.pixelSize: Style.font.subtitle
+                                      font.bold: true
                                       wrapMode: Text.WordWrap
                                       Layout.fillWidth: true
                                     }
@@ -566,38 +638,41 @@ Item {
                                     visible: taskCard.modelData.due_date !== "" || taskCard.modelData.due_time !== ""
                                     text: root.dueRelative(taskCard.modelData.due_date, taskCard.modelData.due_time)
                                     color: Color.accent
-                                    font.family: Style.font.family
+                                    font.family: root.uiFont
+                                    font.bold: true
                                     font.pixelSize: Style.font.caption
                                   }
                                   RowLayout {
                                     Layout.fillWidth: true
                                     Button {
                                       visible: taskCard.modelData.column_name === "Backlog"
-                                      text: "Start"
+                                      text: "START"
                                       onClicked: root.run(["move", String(taskCard.taskId), "In Progress"])
                                     }
                                     Button {
                                       visible: taskCard.modelData.column_name !== "Completed"
-                                      text: "Complete"
+                                      text: "COMPLETE"
                                       onClicked: root.run(["move", String(taskCard.taskId), "Completed"])
                                     }
                                     Button {
                                       visible: taskCard.modelData.column_name === "Completed"
-                                      text: "Reopen"
+                                      text: "REOPEN"
                                       onClicked: root.run(["move", String(taskCard.taskId), "In Progress"])
                                     }
                                     Item { Layout.fillWidth: true }
                                     Rectangle {
-                                      implicitWidth: 34
-                                      implicitHeight: 30
-                                      radius: 6
-                                      color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.08)
+                                      implicitWidth: 38
+                                      implicitHeight: 32
+                                      radius: 8
+                                      color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10)
+                                      border.color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.16)
                                       Text {
                                         anchors.centerIn: parent
                                         text: "×"
                                         color: Color.menu.text
-                                        font.family: Style.font.family
-                                        font.pixelSize: 22
+                                        font.family: root.uiFont
+                                        font.pixelSize: 24
+                                        font.bold: true
                                       }
                                       MouseArea {
                                         anchors.fill: parent
