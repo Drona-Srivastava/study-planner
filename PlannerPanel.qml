@@ -742,8 +742,18 @@ Item {
               verticalAlignment: Text.AlignVCenter
             }
             background: Rectangle { radius: 8; color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10); border.color: Color.menu.border }
-            up.indicator: Rectangle { x: 64; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22); Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.min(hourPicker.to, hourPicker.value + 1) } }
-            down.indicator: Rectangle { x: 64; y: 28; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12); Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.max(hourPicker.from, hourPicker.value - 1) } }
+            up.indicator: Rectangle {
+              x: 64; width: 24; height: 28
+              color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22)
+              Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }
+              MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.min(hourPicker.to, hourPicker.value + 1) }
+            }
+            down.indicator: Rectangle {
+              x: 64; y: 28; width: 24; height: 28
+              color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
+              Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }
+              MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.max(hourPicker.from, hourPicker.value - 1) }
+            }
           }
           Text { text: ":"; color: Color.menu.text; font.pixelSize: 26; font.bold: true }
           SpinBox {
@@ -759,8 +769,18 @@ Item {
               verticalAlignment: Text.AlignVCenter
             }
             background: Rectangle { radius: 8; color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10); border.color: Color.menu.border }
-            up.indicator: Rectangle { x: 64; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22); Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.min(minutePicker.to, minutePicker.value + 1) } }
-            down.indicator: Rectangle { x: 64; y: 28; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12); Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.max(minutePicker.from, minutePicker.value - 1) } }
+            up.indicator: Rectangle {
+              x: 64; width: 24; height: 28
+              color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22)
+              Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }
+              MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.min(minutePicker.to, minutePicker.value + 1) }
+            }
+            down.indicator: Rectangle {
+              x: 64; y: 28; width: 24; height: 28
+              color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12)
+              Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }
+              MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.max(minutePicker.from, minutePicker.value - 1) }
+            }
           }
         }
         RowLayout {
