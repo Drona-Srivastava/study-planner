@@ -265,12 +265,7 @@ Item {
             Text {
               text: "×"
               color: Color.menu.text
-              font.pixelSize: 36
-              font.bold: true
-              Layout.preferredWidth: 42
-              Layout.preferredHeight: 42
-              horizontalAlignment: Text.AlignHCenter
-              verticalAlignment: Text.AlignVCenter
+              font.pixelSize: 24
               MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
             }
           }
@@ -595,7 +590,13 @@ Item {
                                       onClicked: root.run(["move", String(taskCard.taskId), "In Progress"])
                                     }
                                     Item { Layout.fillWidth: true }
-                                    Button { text: "×"; onClicked: root.run(["delete", String(taskCard.taskId)]) }
+                                    Button {
+                                      text: "×"
+                                      font.pixelSize: 22
+                                      implicitWidth: 34
+                                      implicitHeight: 30
+                                      onClicked: root.run(["delete", String(taskCard.taskId)])
+                                    }
                                   }
                                 }
                               }
