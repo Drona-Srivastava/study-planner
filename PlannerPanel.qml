@@ -46,6 +46,13 @@ Item {
     taskProc.running = true
   }
 
+  function refreshAgendaLayout() {
+    Qt.callLater(function() {
+      agendaColumn.forceLayout()
+      agendaFlickable.returnToBounds()
+    })
+  }
+
   function run(args) {
     mutation.command = ["python3", root.script].concat(args)
     mutation.running = true
@@ -156,6 +163,7 @@ Item {
       onStreamFinished: {
         try {
           root.agendaData = JSON.parse(text || "{}")
+          root.refreshAgendaLayout()
         } catch (e) {
           root.error = "Invalid agenda response"
         }
@@ -333,9 +341,12 @@ Item {
             currentIndex: root.tab === "Agenda" ? 0 : 1
 
             Flickable {
+              id: agendaFlickable
               contentWidth: width
-              contentHeight: agendaColumn.implicitHeight
+              contentHeight: Math.max(height, agendaColumn.implicitHeight + 12)
               clip: true
+              onWidthChanged: root.refreshAgendaLayout()
+              onVisibleChanged: if (visible) root.refreshAgendaLayout()
 
               ColumnLayout {
                 id: agendaColumn
