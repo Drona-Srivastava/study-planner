@@ -18,6 +18,8 @@ Item {
   property var agendaData: ({items: [], current: null, next: null})
   property var taskData: []
   property string error: ""
+  property var datePickerMonth: new Date()
+  readonly property var monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   readonly property string script: Qt.resolvedUrl("planner.py").toString().replace(/^file:\/\//, "")
 
   function open(payload) {
@@ -69,6 +71,18 @@ Item {
       timePopup.close()
       datePopup.open()
     }
+  }
+
+  function daysInMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  }
+
+  function firstDayMondayIndex(date) {
+    return (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7
+  }
+
+  function shiftPickerMonth(delta) {
+    root.datePickerMonth = new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth() + delta, 1)
   }
 
   function insertDate(date) {
@@ -550,11 +564,47 @@ Item {
           font.family: Style.font.family
           font.bold: true
         }
-        Calendar {
-          id: dateCalendar
+        RowLayout {
+          Layout.fillWidth: true
+          Button { text: "‹"; onClicked: root.shiftPickerMonth(-1) }
+          Text {
+            text: root.monthNames[root.datePickerMonth.getMonth()] + " " + root.datePickerMonth.getFullYear()
+            color: Color.menu.text
+            font.family: Style.font.family
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+            Layout.fillWidth: true
+          }
+          Button { text: "›"; onClicked: root.shiftPickerMonth(1) }
+        }
+        GridLayout {
+          columns: 7
           Layout.fillWidth: true
           Layout.fillHeight: true
-          onClicked: function(date) { root.insertDate(date) }
+          Repeater {
+            model: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+            delegate: Text {
+              required property string modelData
+              text: modelData
+              color: Color.menu.text
+              opacity: 0.6
+              font.family: Style.font.family
+              horizontalAlignment: Text.AlignHCenter
+              Layout.fillWidth: true
+            }
+          }
+          Repeater {
+            model: 42
+            delegate: Button {
+              required property int index
+              readonly property int dayNumber: index - root.firstDayMondayIndex(root.datePickerMonth) + 1
+              text: dayNumber > 0 && dayNumber <= root.daysInMonth(root.datePickerMonth) ? String(dayNumber) : ""
+              enabled: dayNumber > 0 && dayNumber <= root.daysInMonth(root.datePickerMonth)
+              Layout.fillWidth: true
+              Layout.fillHeight: true
+              onClicked: root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), dayNumber))
+            }
+          }
         }
         Button { text: "Cancel"; Layout.alignment: Qt.AlignRight; onClicked: datePopup.close() }
       }
