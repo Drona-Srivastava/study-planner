@@ -590,12 +590,22 @@ Item {
                                       onClicked: root.run(["move", String(taskCard.taskId), "In Progress"])
                                     }
                                     Item { Layout.fillWidth: true }
-                                    Button {
-                                      text: "×"
-                                      font.pixelSize: 22
+                                    Rectangle {
                                       implicitWidth: 34
                                       implicitHeight: 30
-                                      onClicked: root.run(["delete", String(taskCard.taskId)])
+                                      radius: 6
+                                      color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.08)
+                                      Text {
+                                        anchors.centerIn: parent
+                                        text: "×"
+                                        color: Color.menu.text
+                                        font.family: Style.font.family
+                                        font.pixelSize: 22
+                                      }
+                                      MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: root.run(["delete", String(taskCard.taskId)])
+                                      }
                                     }
                                   }
                                 }
