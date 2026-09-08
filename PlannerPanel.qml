@@ -18,7 +18,9 @@ Item {
   property var agendaData: ({items: [], current: null, next: null})
   property var taskData: []
   property string error: ""
+  property int relativeTick: 0
   property var datePickerMonth: new Date()
+  property int datePickerDay: new Date().getDate()
   readonly property var monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   readonly property string script: Qt.resolvedUrl("planner.py").toString().replace(/^file:\/\//, "")
 
@@ -73,6 +75,13 @@ Item {
     }
   }
 
+  function scheduleTokenPicker() {
+    if (newTask.text.endsWith("@"))
+      tokenPickerTimer.restart()
+    else
+      tokenPickerTimer.stop()
+  }
+
   function daysInMonth(date) {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
   }
@@ -83,6 +92,36 @@ Item {
 
   function shiftPickerMonth(delta) {
     root.datePickerMonth = new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth() + delta, 1)
+    root.datePickerDay = Math.min(root.datePickerDay, root.daysInMonth(root.datePickerMonth))
+  }
+
+  function movePickerDay(delta) {
+    var date = new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), root.datePickerDay)
+    date.setDate(date.getDate() + delta)
+    root.datePickerMonth = new Date(date.getFullYear(), date.getMonth(), 1)
+    root.datePickerDay = date.getDate()
+  }
+
+  function dueRelative(dateValue, timeValue) {
+    void(relativeTick)
+    if (!dateValue)
+      return ""
+    var parts = String(dateValue).split("-")
+    if (parts.length !== 3)
+      return ""
+    var timeParts = String(timeValue || "23:59").split(":")
+    var due = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), Number(timeParts[0] || 23), Number(timeParts[1] || 59))
+    var difference = due.getTime() - new Date().getTime()
+    var future = difference >= 0
+    var totalMinutes = Math.max(1, Math.ceil(Math.abs(difference) / 60000))
+    var days = Math.floor(totalMinutes / 1440)
+    var hours = Math.floor((totalMinutes % 1440) / 60)
+    var minutes = totalMinutes % 60
+    var text = ""
+    if (days > 0) text += days + "d "
+    if (hours > 0 || days > 0) text += hours + "h "
+    if (days === 0 && hours === 0) text += minutes + "m"
+    return (future ? "Due in " : "Overdue by ") + text.trim()
   }
 
   function insertDate(date) {
@@ -142,6 +181,21 @@ Item {
         root.error = "Task operation failed"
       refresh()
     }
+  }
+
+  Timer {
+    id: tokenPickerTimer
+    interval: 280
+    repeat: false
+    onTriggered: root.showTokenPicker()
+  }
+
+  Timer {
+    interval: 60000
+    running: root.opened
+    repeat: true
+    triggeredOnStart: true
+    onTriggered: root.relativeTick++
   }
 
   PanelWindow {
@@ -373,7 +427,7 @@ Item {
                     placeholderText: "Task title — type @ for date or @@ for time"
                     Layout.fillWidth: true
                     onAccepted: root.addTask()
-                    onTextChanged: root.showTokenPicker()
+                    onTextChanged: root.scheduleTokenPicker()
                   }
                   Button { text: "Add"; onClicked: root.addTask() }
                 }
@@ -492,6 +546,7 @@ Item {
                                     visible: taskCard.modelData.due_date !== "" || taskCard.modelData.due_time !== ""
                                     text: (taskCard.modelData.due_date !== "" ? "@" + root.displayDate(taskCard.modelData.due_date) : "")
                                       + (taskCard.modelData.due_time !== "" ? "  @@" + taskCard.modelData.due_time : "")
+                                      + "  ·  " + root.dueRelative(taskCard.modelData.due_date, taskCard.modelData.due_time)
                                     color: Color.accent
                                     font.family: Style.font.family
                                     font.pixelSize: Style.font.caption
@@ -546,6 +601,21 @@ Item {
       x: Math.round((parent.width - width) / 2)
       y: Math.round((parent.height - height) / 2)
       closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+      onOpened: {
+        var today = new Date()
+        root.datePickerMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+        root.datePickerDay = today.getDate()
+        forceActiveFocus()
+      }
+      Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Left) root.movePickerDay(-1)
+        else if (event.key === Qt.Key_Right) root.movePickerDay(1)
+        else if (event.key === Qt.Key_Up) root.movePickerDay(-7)
+        else if (event.key === Qt.Key_Down) root.movePickerDay(7)
+        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), root.datePickerDay))
+        else return
+        event.accepted = true
+      }
 
       background: Rectangle {
         radius: 12
@@ -600,8 +670,12 @@ Item {
               readonly property int dayNumber: index - root.firstDayMondayIndex(root.datePickerMonth) + 1
               text: dayNumber > 0 && dayNumber <= root.daysInMonth(root.datePickerMonth) ? String(dayNumber) : ""
               enabled: dayNumber > 0 && dayNumber <= root.daysInMonth(root.datePickerMonth)
+              checkable: true
+              checked: enabled && dayNumber === root.datePickerDay
               Layout.fillWidth: true
               Layout.fillHeight: true
+              focusPolicy: Qt.NoFocus
+              onPressed: root.datePickerDay = dayNumber
               onClicked: root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), dayNumber))
             }
           }
@@ -619,6 +693,21 @@ Item {
       x: Math.round((parent.width - width) / 2)
       y: Math.round((parent.height - height) / 2)
       closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+      Keys.onPressed: function(event) {
+        if (event.key === Qt.Key_Up) hourPicker.value = Math.min(hourPicker.to, hourPicker.value + 1)
+        else if (event.key === Qt.Key_Down) hourPicker.value = Math.max(hourPicker.from, hourPicker.value - 1)
+        else if (event.key === Qt.Key_Right) minutePicker.value = Math.min(minutePicker.to, minutePicker.value + 1)
+        else if (event.key === Qt.Key_Left) minutePicker.value = Math.max(minutePicker.from, minutePicker.value - 1)
+        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.insertTime()
+        else return
+        event.accepted = true
+      }
+      onOpened: {
+        var current = new Date()
+        hourPicker.value = current.getHours()
+        minutePicker.value = current.getMinutes()
+        forceActiveFocus()
+      }
 
       background: Rectangle {
         radius: 12
@@ -639,10 +728,40 @@ Item {
         }
         RowLayout {
           Layout.alignment: Qt.AlignHCenter
-          spacing: 12
-          SpinBox { id: hourPicker; from: 0; to: 23; value: 13; editable: true }
-          Text { text: ":"; color: Color.menu.text; font.pixelSize: 22 }
-          SpinBox { id: minutePicker; from: 0; to: 59; value: 0; editable: true; stepSize: 5 }
+          spacing: 10
+          SpinBox {
+            id: hourPicker
+            from: 0; to: 23; value: 0; editable: false; stepSize: 1
+            implicitWidth: 88; implicitHeight: 56
+            contentItem: Text {
+              text: String(hourPicker.value).padStart(2, "0")
+              color: Color.menu.text
+              font.family: Style.font.family
+              font.pixelSize: 26
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
+            }
+            background: Rectangle { radius: 8; color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10); border.color: Color.menu.border }
+            up.indicator: Rectangle { x: 64; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22); Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.min(hourPicker.to, hourPicker.value + 1) } }
+            down.indicator: Rectangle { x: 64; y: 28; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12); Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: hourPicker.value = Math.max(hourPicker.from, hourPicker.value - 1) } }
+          }
+          Text { text: ":"; color: Color.menu.text; font.pixelSize: 26; font.bold: true }
+          SpinBox {
+            id: minutePicker
+            from: 0; to: 59; value: 0; editable: false; stepSize: 1
+            implicitWidth: 88; implicitHeight: 56
+            contentItem: Text {
+              text: String(minutePicker.value).padStart(2, "0")
+              color: Color.menu.text
+              font.family: Style.font.family
+              font.pixelSize: 26
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
+            }
+            background: Rectangle { radius: 8; color: Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10); border.color: Color.menu.border }
+            up.indicator: Rectangle { x: 64; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.22); Text { anchors.centerIn: parent; text: "▲"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.min(minutePicker.to, minutePicker.value + 1) } }
+            down.indicator: Rectangle { x: 64; y: 28; width: 24; height: 28; color: Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.12); Text { anchors.centerIn: parent; text: "▼"; color: Color.accent; font.pixelSize: 11 }; MouseArea { anchors.fill: parent; onClicked: minutePicker.value = Math.max(minutePicker.from, minutePicker.value - 1) } }
+          }
         }
         RowLayout {
           Layout.fillWidth: true
