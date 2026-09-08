@@ -258,7 +258,12 @@ Item {
             Text {
               text: "×"
               color: Color.menu.text
-              font.pixelSize: 24
+              font.pixelSize: 28
+              font.bold: true
+              Layout.preferredWidth: 30
+              Layout.preferredHeight: 32
+              horizontalAlignment: Text.AlignHCenter
+              verticalAlignment: Text.AlignVCenter
               MouseArea { anchors.fill: parent; onClicked: root.dismiss() }
             }
           }
@@ -510,18 +515,29 @@ Item {
                                 Layout.fillWidth: true
                                 height: taskDetails.implicitHeight + 20
                                 radius: 8
-                                color: dragHandler.active
+                                color: cardDragArea.drag.active
                                   ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.24)
                                   : Qt.rgba(Color.menu.text.r, Color.menu.text.g, Color.menu.text.b, 0.10)
-                                border.color: dragHandler.active ? Color.accent : "transparent"
-                                opacity: dragHandler.active ? 0.78 : 1
+                                border.color: cardDragArea.drag.active ? Color.accent : "transparent"
+                                opacity: cardDragArea.drag.active ? 0.78 : 1
 
-                                Drag.active: dragHandler.active
+                                Drag.active: cardDragArea.drag.active
                                 Drag.keys: ["study-task"]
                                 Drag.hotSpot.x: width / 2
                                 Drag.hotSpot.y: height / 2
 
-                                DragHandler { id: dragHandler; target: null }
+                                MouseArea {
+                                  id: cardDragArea
+                                  anchors.fill: parent
+                                  z: -1
+                                  acceptedButtons: Qt.LeftButton
+                                  drag.target: taskCard
+                                  drag.axis: Drag.XAndYAxis
+                                  onReleased: {
+                                    taskCard.x = 0
+                                    taskCard.y = 0
+                                  }
+                                }
 
                                 ColumnLayout {
                                   id: taskDetails
