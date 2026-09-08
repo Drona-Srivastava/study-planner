@@ -105,7 +105,7 @@ Item {
   function dueRelative(dateValue, timeValue) {
     void(relativeTick)
     if (!dateValue)
-      return ""
+      return timeValue ? "Due at " + timeValue : ""
     var parts = String(dateValue).split("-")
     if (parts.length !== 3)
       return ""
@@ -544,9 +544,7 @@ Item {
                                   }
                                   Text {
                                     visible: taskCard.modelData.due_date !== "" || taskCard.modelData.due_time !== ""
-                                    text: (taskCard.modelData.due_date !== "" ? "@" + root.displayDate(taskCard.modelData.due_date) : "")
-                                      + (taskCard.modelData.due_time !== "" ? "  @@" + taskCard.modelData.due_time : "")
-                                      + "  ·  " + root.dueRelative(taskCard.modelData.due_date, taskCard.modelData.due_time)
+                                    text: root.dueRelative(taskCard.modelData.due_date, taskCard.modelData.due_time)
                                     color: Color.accent
                                     font.family: Style.font.family
                                     font.pixelSize: Style.font.caption
@@ -605,7 +603,7 @@ Item {
         var today = new Date()
         root.datePickerMonth = new Date(today.getFullYear(), today.getMonth(), 1)
         root.datePickerDay = today.getDate()
-        forceActiveFocus()
+        dateKeyCatcher.forceActiveFocus()
       }
       Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Left) root.movePickerDay(-1)
@@ -622,6 +620,21 @@ Item {
         color: Color.menu.background
         border.color: Color.menu.border
         border.width: 1
+      }
+
+      Item {
+        id: dateKeyCatcher
+        anchors.fill: parent
+        focus: true
+        Keys.onPressed: function(event) {
+          if (event.key === Qt.Key_Left) root.movePickerDay(-1)
+          else if (event.key === Qt.Key_Right) root.movePickerDay(1)
+          else if (event.key === Qt.Key_Up) root.movePickerDay(-7)
+          else if (event.key === Qt.Key_Down) root.movePickerDay(7)
+          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.insertDate(new Date(root.datePickerMonth.getFullYear(), root.datePickerMonth.getMonth(), root.datePickerDay))
+          else return
+          event.accepted = true
+        }
       }
 
       ColumnLayout {
@@ -719,7 +732,7 @@ Item {
         var current = new Date()
         hourPicker.value = current.getHours()
         minutePicker.value = current.getMinutes()
-        forceActiveFocus()
+        timeKeyCatcher.forceActiveFocus()
       }
 
       background: Rectangle {
@@ -727,6 +740,21 @@ Item {
         color: Color.menu.background
         border.color: Color.menu.border
         border.width: 1
+      }
+
+      Item {
+        id: timeKeyCatcher
+        anchors.fill: parent
+        focus: true
+        Keys.onPressed: function(event) {
+          if (event.key === Qt.Key_Up) hourPicker.value = Math.min(hourPicker.to, hourPicker.value + 1)
+          else if (event.key === Qt.Key_Down) hourPicker.value = Math.max(hourPicker.from, hourPicker.value - 1)
+          else if (event.key === Qt.Key_Right) minutePicker.value = Math.min(minutePicker.to, minutePicker.value + 1)
+          else if (event.key === Qt.Key_Left) minutePicker.value = Math.max(minutePicker.from, minutePicker.value - 1)
+          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root.insertTime()
+          else return
+          event.accepted = true
+        }
       }
 
       ColumnLayout {
