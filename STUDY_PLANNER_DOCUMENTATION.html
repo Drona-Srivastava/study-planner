@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Study Planner - Technical Documentation</title>
+<style>
+body { font-family: sans-serif; line-height: 1.45; margin: 2.2cm; color: #202124; }
+h1 { color: #234d4a; font-size: 26pt; }
+h2 { color: #2f6f68; border-bottom: 1px solid #9bb8b3; padding-bottom: 4px; }
+h3 { color: #345f5b; }
+code, pre { font-family: monospace; background: #eef2f1; }
+code { padding: 1px 3px; }
+pre { padding: 10px; white-space: pre-wrap; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #9bb8b3; padding: 6px; text-align: left; }
+th { background: #dce9e6; }
+.note { background: #eef6f4; border-left: 4px solid #5d978e; padding: 8px 12px; }
+</style>
+</head>
+<body>
+<h1>Study Planner</h1>
+<p><strong>Detailed technical and user documentation</strong><br>
+Omarchy plugin for GATE and placement preparation, timetable reminders, and a local Kanban task board.</p>
+
+<h2>1. Purpose and design</h2>
+<p>Study Planner combines two related workflows in one Omarchy shell panel. The Agenda is driven by a weekly timetable and provides current, next, and daily schedule information. The Kanban board is for manually created tasks that move through Backlog, In Progress, and Completed.</p>
+<p>The plugin is intentionally local-first. The UI is written in QML for Quickshell, while a Python standard-library backend stores tasks and timetable completion state in SQLite. No account, network API, or external database is required at runtime.</p>
+<div class="note"><strong>Theme compatibility:</strong> visual colors and fonts are read from Omarchy's <code>Color</code> and <code>Style</code> objects. The plugin does not hardcode Geist, JetBrains Mono, or a theme-specific palette.</div>
+
+<h2>2. Repository and installation</h2>
+<p>Repository: <code>https://github.com/Drona-Srivastava/study-planner</code></p>
+<pre>omarchy plugin add https://github.com/Drona-Srivastava/study-planner.git --enable</pre>
+<p>Update an existing installation:</p>
+<pre>omarchy plugin update study-planner --yes
+omarchy restart shell</pre>
+<p>Omarchy normally installs the source at <code>~/.config/omarchy/plugins/study-planner</code>. The persistent database is separate at <code>~/.local/state/omarchy/study-planner/planner.db</code>, so source updates do not delete tasks.</p>
+
+<h2>3. File-by-file component guide</h2>
+<h3>3.1 manifest.json</h3>
+<p>The manifest identifies the plugin as <code>study-planner</code>, describes it as a productivity plugin, and registers three entry points:</p>
+<table><tr><th>Entry point</th><th>File</th><th>Role</th></tr>
+<tr><td>barWidget</td><td><code>BarWidget.qml</code></td><td>Icon placed in the Omarchy bar.</td></tr>
+<tr><td>panel</td><td><code>PlannerPanel.qml</code></td><td>Full-screen overlay panel containing Agenda and Kanban.</td></tr>
+<tr><td>service</td><td><code>PlannerService.qml</code></td><td>Background reminder polling.</td></tr></table>
+
+<h3>3.2 BarWidget.qml</h3>
+<p>This component creates the compact bar entry. It periodically executes <code>planner.py agenda</code>, uses the current or next block to build its tooltip, and toggles the panel through <code>omarchy-shell shell toggle study-planner</code>. The widget uses the Omarchy <code>WidgetButton</code> component and the bar's own font/color system.</p>
+
+<h3>3.3 PlannerPanel.qml</h3>
+<p>This is the primary user interface.</p>
+<ul>
+<li><strong>Root state:</strong> stores whether the panel is open, the selected tab, agenda JSON, task JSON, errors, date-picker state, and a timer tick used to refresh relative due text.</li>
+<li><strong>Process objects:</strong> run <code>planner.py agenda</code>, <code>planner.py tasks</code>, and mutation commands. JSON output is parsed into QML properties.</li>
+<li><strong>Header:</strong> shows the title, current date, and close control.</li>
+<li><strong>Agenda:</strong> shows the active block, the next block, and today's schedule. Timetable completion can be checked, with the existing limited undo behavior.</li>
+<li><strong>Kanban:</strong> shows three fixed columns. Drag/drop is intentionally not used. Cards have checklist, Start, Complete, Reopen, delete, and relative due-time controls.</li>
+<li><strong>Date picker:</strong> opens after a trailing <code>@</code>, starts on today's date, and supports arrow keys, month navigation, and Enter.</li>
+<li><strong>Time picker:</strong> opens after a trailing <code>@@</code>, starts from the current time, uses 24-hour hour/minute controls, and supports keyboard interaction.</li>
+<li><strong>Interaction feedback:</strong> buttons, checkboxes, picker controls, tabs, close, delete, and Add areas use a pointing-hand cursor.</li>
+</ul>
+
+<h3>3.4 PlannerService.qml</h3>
+<p>The service runs <code>planner.py reminders</code> every 30 seconds. The Python backend decides whether a notification is due and deduplicates notifications in SQLite. The QML service does not duplicate the reminder logic.</p>
+
+<h3>3.5 planner.py</h3>
+<p>The backend uses only Python's standard library: <code>sqlite3</code>, <code>argparse</code>, <code>datetime</code>, <code>zipfile</code>, XML parsing, subprocess, and filesystem utilities.</p>
+<table><tr><th>Function/area</th><th>Responsibility</th></tr>
+<tr><td><code>connect</code> / <code>init_db</code></td><td>Create the state directory, open SQLite, create tables, and apply small compatibility migrations.</td></tr>
+<tr><td><code>clean_lines</code></td><td>Extract text from DOCX XML or PDF through <code>pdftotext</code>.</td></tr>
+<tr><td><code>parse_timetable</code></td><td>Recognize weekday, time range, activity title, and category rows.</td></tr>
+<tr><td><code>import_documents</code></td><td>Import timetable blocks and contest events into the database.</td></tr>
+<tr><td><code>agenda</code></td><td>Return today's relevant rows, class display names, current block, and next block.</td></tr>
+<tr><td><code>display_title</code></td><td>Map course codes to friendly names such as Drones Lab and Embedded Class.</td></tr>
+<tr><td><code>due_notifications</code></td><td>Calculate lead/start/missed reminders and write notification keys to prevent repeats.</td></tr>
+<tr><td>CLI handlers</td><td>Implement <code>init</code>, <code>agenda</code>, <code>tasks</code>, <code>add</code>, <code>move</code>, <code>delete</code>, block completion, <code>reminders</code>, and <code>settings</code>.</td></tr>
+</table>
+
+<h2>4. SQLite data model</h2>
+<table><tr><th>Table</th><th>Purpose</th></tr>
+<tr><td><code>settings</code></td><td>Timezone, lead minutes, start notification setting, missed notification setting, and source hash.</td></tr>
+<tr><td><code>schedule_blocks</code></td><td>Recurring weekly timetable rows.</td></tr>
+<tr><td><code>events</code></td><td>Date-specific contest or event rows.</td></tr>
+<tr><td><code>block_instances</code></td><td>Per-date completion state for recurring timetable blocks.</td></tr>
+<tr><td><code>tasks</code></td><td>Manual task title, details, board column, category, due date, due time, creation, and completion timestamps.</td></tr>
+<tr><td><code>notification_log</code></td><td>Deduplication keys for reminders already sent.</td></tr></table>
+
+<h2>5. Task and date/time workflow</h2>
+<ol>
+<li>Enter a task title in the Kanban input and press Enter or Add.</li>
+<li>When the text ends with <code>@</code>, the calendar opens after a short debounce.</li>
+<li>Choose a date with the mouse or arrow keys and press Enter.</li>
+<li>When the text ends with <code>@@</code>, the time picker opens.</li>
+<li>Choose hour and minute using arrows, mouse, or keyboard and select Use time.</li>
+<li>The backend normalizes date/time values before storing them.</li>
+<li>The card computes and displays a relative value such as Due in 14h or Due in 1d 9h.</li>
+</ol>
+<p>Date-only tasks use the end of that date for relative calculations. Time-only tasks display the selected time. Tasks with neither value do not show a due indicator.</p>
+
+<h2>6. Timetable classes</h2>
+<p>The importer reads the timetable documents in <code>data/</code>. The Agenda includes study categories and <code>CLASS</code> rows, while excluding generic <code>COLLEGE</code> rows such as campus gaps. Course codes are transformed only at presentation time:</p>
+<table><tr><th>Source code/pattern</th><th>Displayed name</th></tr>
+<tr><td>BCSE432E lab</td><td>Drones Lab</td></tr>
+<tr><td>BCSE432E class</td><td>RL Class</td></tr>
+<tr><td>BCSE301L</td><td>SEO Class</td></tr>
+<tr><td>BCSE305L</td><td>Embedded Class</td></tr>
+<tr><td>BCSE428P</td><td>Drones Lab</td></tr>
+<tr><td>BCSE428L</td><td>Drones Class</td></tr></table>
+
+<h2>7. Reminder behavior</h2>
+<p>Default settings are a 10-minute lead reminder and a reminder at block start. Missed-block reminders are disabled by default. Settings can be viewed or changed with:</p>
+<pre>python3 planner.py settings
+python3 planner.py settings lead_minutes 15
+python3 planner.py settings notify_at_start 0
+python3 planner.py settings notify_missed 1</pre>
+<p>Reminder keys combine the date, block ID, and reminder type. This prevents the 30-second service loop from repeatedly notifying for the same event.</p>
+
+<h2>8. Validation and maintenance</h2>
+<pre>qmllint BarWidget.qml PlannerPanel.qml PlannerService.qml
+omarchy plugin validate .
+python3 -m unittest discover -s tests -v
+python3 planner.py init
+python3 planner.py agenda
+python3 planner.py tasks</pre>
+<p>After a source update, push to GitHub, run <code>omarchy plugin update study-planner --yes</code>, and restart with <code>omarchy restart shell</code> if the panel does not reload. If it still does not open, inspect the current Quickshell log for QML errors.</p>
+
+<h2>9. Development history and handoff</h2>
+<p>The project began as a schedule/reminder and Kanban plugin, was renamed to <code>study-planner</code>, and was published to the GitHub repository above. Drag/drop was later removed after unreliable behavior. The UI was then refined for column layout, date/time pickers, relative due labels, class-name mapping, Omarchy-compatible typography, compact sizing, and cursor feedback.</p>
+<p>The accompanying <code>SESSION_HANDOFF.md</code> is the authoritative continuation note for this development session. The current repository commit when this document was created is <code>6f340ca</code>.</p>
+</body>
+</html>
