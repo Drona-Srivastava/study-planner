@@ -298,10 +298,10 @@ def parse_due_tokens(title: str, due_date: str = "", due_time: str = "") -> tupl
     date_match = re.search(r"(?<!@)@\{?(\d{1,2}-\d{1,2}-(?:\d{2}|\d{4})|\d{4}-\d{2}-\d{2})\}?", title)
     if not due_time and time_match:
         due_time = f"{int(time_match.group(1)):02d}:{time_match.group(2)}"
-    if not due_date and date_match:
-        raw = date_match.group(1)
+    raw_date = due_date or (date_match.group(1) if date_match else "")
+    if raw_date:
         try:
-            parsed = dt.datetime.strptime(raw, "%Y-%m-%d") if raw.count("-") == 2 and len(raw.split("-")[0]) == 4 else dt.datetime.strptime(raw, "%d-%m-%y" if len(raw.split("-")[-1]) == 2 else "%d-%m-%Y")
+            parsed = dt.datetime.strptime(raw_date, "%Y-%m-%d") if raw_date.count("-") == 2 and len(raw_date.split("-")[0]) == 4 else dt.datetime.strptime(raw_date, "%d-%m-%y" if len(raw_date.split("-")[-1]) == 2 else "%d-%m-%Y")
             due_date = parsed.date().isoformat()
         except ValueError:
             fail("Due date must use DD-MM-YY, DD-MM-YYYY, or YYYY-MM-DD")
