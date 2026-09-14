@@ -378,7 +378,7 @@ Item {
                     Text {
                       text: root.agendaData.current
                         ? root.agendaData.current.title
-                        : "No actionable timetable block is active"
+                        : "No scheduled item is active"
                       color: Color.menu.text
                       font.family: root.uiFont
                       font.pixelSize: Style.font.subtitle + 1

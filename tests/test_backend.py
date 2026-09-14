@@ -1,4 +1,5 @@
 import importlib.util
+import datetime as dt
 import tempfile
 from pathlib import Path
 
@@ -13,6 +14,33 @@ def test_docx_import_has_actionable_blocks():
     assert blocks
     assert {row["category"] for row in blocks} >= {"GATE", "DSA", "CLOUD"}
     assert all(row["weekday"] in range(7) for row in blocks)
+
+
+def test_agenda_includes_all_non_meal_timetable_items():
+    with tempfile.TemporaryDirectory() as directory:
+        old = planner.STATE_DIR
+        planner.STATE_DIR = Path(directory)
+        con = planner.connect()
+        planner.init_db(con)
+        rows = [
+            (0, "07:00", "07:30", "Wake + hygiene", "REST"),
+            (0, "07:30", "08:00", "Breakfast", "REST"),
+            (0, "08:00", "10:00", "GATE study", "GATE"),
+            (0, "10:00", "10:30", "Break", "REST"),
+            (0, "15:50", "16:40", "RL Class", "CLASS"),
+            (0, "18:00", "19:00", "Dinner + decompression", "REST"),
+            (0, "20:00", "21:30", "Competition", "CONTEST"),
+        ]
+        con.executemany(
+            "INSERT INTO schedule_blocks(weekday,start_time,end_time,title,category) VALUES(?,?,?,?,?)",
+            rows,
+        )
+        con.commit()
+        result = planner.agenda(con, dt.date(2026, 9, 14))
+        titles = [item["title"] for item in result["items"]]
+        assert titles == ["Wake + hygiene", "GATE study", "Break", "RL Class", "Competition"]
+        con.close()
+        planner.STATE_DIR = old
 
 
 def test_database_and_tasks():

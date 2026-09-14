@@ -22,7 +22,9 @@ The database is stored at:
 ~/.local/state/omarchy/study-planner/planner.db
 ```
 
-Timetable blocks and daily completion history are separate from manual tasks.
+The Agenda shows every timetable activity and competition except breakfast,
+lunch, and dinner rows. Timetable blocks and daily completion history are
+separate from manual tasks.
 Manual tasks use `Backlog`, `In Progress`, and `Completed` columns. Existing
 `To Do` values are migrated to `In Progress` automatically.
 

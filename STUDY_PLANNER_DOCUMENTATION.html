@@ -97,7 +97,7 @@ omarchy restart shell</pre>
 <p>Date-only tasks use the end of that date for relative calculations. Time-only tasks display the selected time. Tasks with neither value do not show a due indicator.</p>
 
 <h2>6. Timetable classes</h2>
-<p>The importer reads the timetable documents in <code>data/</code>. The Agenda includes study categories and <code>CLASS</code> rows, while excluding generic <code>COLLEGE</code> rows such as campus gaps. Course codes are transformed only at presentation time:</p>
+<p>The importer reads the timetable documents in <code>data/</code>. The Agenda includes every timetable activity, including study, class, contest, travel, rest, breaks, and campus-gap rows. Only rows named breakfast, lunch, or dinner are excluded. Course codes are transformed only at presentation time:</p>
 <table><tr><th>Source code/pattern</th><th>Displayed name</th></tr>
 <tr><td>BCSE432E lab</td><td>Drones Lab</td></tr>
 <tr><td>BCSE432E class</td><td>RL Class</td></tr>

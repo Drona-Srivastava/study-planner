@@ -25,6 +25,7 @@ DAYS = {"MON": 0, "TUE": 1, "WED": 2, "THU": 3, "FRI": 4, "SAT": 5, "SUN": 6}
 CATEGORIES = {"GATE", "DSA", "CLOUD", "CLASS", "COLLEGE", "REST", "TRAVEL", "SLEEP", "CONTEST", "REVIEW"}
 ACTIONABLE = {"GATE", "DSA", "CLOUD", "CONTEST", "REVIEW", "COLLEGE"}
 TIME_RE = re.compile(r"^(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})$")
+MEAL_RE = re.compile(r"\b(?:breakfast|lunch|dinner)\b", re.IGNORECASE)
 
 
 def emit(value: object) -> None:
@@ -236,14 +237,19 @@ def display_title(title: str, category: str) -> str:
     return title
 
 
+def is_agenda_item(title: str) -> bool:
+    """Keep every timetable activity except named breakfast/lunch/dinner rows."""
+    return not MEAL_RE.search(title)
+
+
 def agenda(con: sqlite3.Connection, date: dt.date | None = None) -> dict[str, object]:
     date = date or now().date()
     weekday = date.weekday()
     rows = con.execute(
-        "SELECT b.*, COALESCE(i.status,'pending') status, COALESCE(i.updated_at,'') updated_at FROM schedule_blocks b LEFT JOIN block_instances i ON i.block_id=b.id AND i.instance_date=? WHERE b.weekday=? AND b.category IN ('GATE','DSA','CLOUD','CONTEST','REVIEW','CLASS') ORDER BY b.start_time",
+        "SELECT b.*, COALESCE(i.status,'pending') status, COALESCE(i.updated_at,'') updated_at FROM schedule_blocks b LEFT JOIN block_instances i ON i.block_id=b.id AND i.instance_date=? WHERE b.weekday=? ORDER BY b.start_time",
         (date.isoformat(), weekday),
     ).fetchall()
-    items = [dict(row) for row in rows]
+    items = [dict(row) for row in rows if is_agenda_item(row["title"])]
     for item in items:
         item["title"] = display_title(item["title"], item["category"])
     event_rows = con.execute("SELECT id,start_time,end_time,title,category FROM events WHERE event_date=? ORDER BY start_time", (date.isoformat(),)).fetchall()
