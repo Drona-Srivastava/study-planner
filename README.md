@@ -8,7 +8,7 @@ SQLite Kanban board.
 After publishing this folder to GitHub:
 
 ```bash
-omarchy plugin add https://github.com/YOUR-USER/study-planner.git --enable
+omarchy plugin add https://github.com/Drona-Srivastava/study-planner --enable
 ```
 
 The plugin adds the widget to the default bar section. Click it to open the
