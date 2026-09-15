@@ -9,6 +9,7 @@ WHAT IT DOES
 
 • Shows today's timetable and the next/current scheduled block.
 • Sends reminder notifications for timetable blocks through Omarchy.
+• Plays a standard system notification sound and reminds you to check Kanban every 4 hours.
 • Provides Backlog, In Progress, and Completed task columns.
 • Lets each task have an optional due date, due time, or both.
 • Opens a calendar when @ is typed and a 24-hour time picker when @@ is typed.

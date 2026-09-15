@@ -10,6 +10,7 @@ import json
 import re
 import sqlite3
 import os
+import shutil
 import subprocess
 import sys
 import zipfile
@@ -26,6 +27,10 @@ CATEGORIES = {"GATE", "DSA", "CLOUD", "CLASS", "COLLEGE", "REST", "TRAVEL", "SLE
 ACTIONABLE = {"GATE", "DSA", "CLOUD", "CONTEST", "REVIEW", "COLLEGE"}
 TIME_RE = re.compile(r"^(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})$")
 MEAL_RE = re.compile(r"\b(?:breakfast|lunch|dinner)\b", re.IGNORECASE)
+DEFAULT_SOUND_FILES = (
+    "/usr/share/sounds/freedesktop/stereo/message-new-instant.oga",
+    "/usr/share/sounds/freedesktop/stereo/message.oga",
+)
 
 
 def emit(value: object) -> None:
@@ -101,6 +106,8 @@ def init_db(con: sqlite3.Connection) -> None:
         "lead_minutes": "10",
         "notify_at_start": "1",
         "notify_missed": "0",
+        "kanban_reminder_hours": "4",
+        "kanban_last_reminder_at": "",
     }
     con.executemany("INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)", defaults.items())
     columns = {row["name"] for row in con.execute("PRAGMA table_info(tasks)")}
@@ -242,6 +249,34 @@ def is_agenda_item(title: str) -> bool:
     return not MEAL_RE.search(title)
 
 
+def notification_sound_file() -> str:
+    configured = os.environ.get("STUDY_PLANNER_SOUND_FILE", "")
+    candidates = (configured,) if configured else DEFAULT_SOUND_FILES
+    return next((path for path in candidates if path and Path(path).is_file()), "")
+
+
+def play_notification_sound() -> None:
+    if os.environ.get("STUDY_PLANNER_NO_SOUND") == "1":
+        return
+    sound_file = notification_sound_file()
+    if not sound_file:
+        return
+    for player in ("pw-play", "paplay"):
+        player_path = shutil.which(player)
+        if not player_path:
+            continue
+        try:
+            subprocess.Popen(
+                [player_path, sound_file],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError:
+            continue
+        return
+
+
 def agenda(con: sqlite3.Connection, date: dt.date | None = None) -> dict[str, object]:
     date = date or now().date()
     weekday = date.weekday()
@@ -309,6 +344,23 @@ def due_notifications(con: sqlite3.Connection) -> list[dict[str, str]]:
             continue
         con.execute("INSERT INTO notification_log(notification_key,sent_at) VALUES(?,?)", (key, iso_now()))
         output.append({"key": key, "headline": headline, "description": description})
+    hours = int(con.execute("SELECT value FROM settings WHERE key='kanban_reminder_hours'").fetchone()[0])
+    last_value = con.execute("SELECT value FROM settings WHERE key='kanban_last_reminder_at'").fetchone()[0]
+    if not last_value:
+        con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('kanban_last_reminder_at',?)", (iso_now(),))
+    else:
+        try:
+            elapsed = (now() - dt.datetime.fromisoformat(last_value)).total_seconds()
+        except ValueError:
+            elapsed = hours * 3600
+        if elapsed >= hours * 3600:
+            key = f"kanban:{now().date().isoformat()}:{now().strftime('%H%M')}"
+            con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('kanban_last_reminder_at',?)", (iso_now(),))
+            output.append({
+                "key": key,
+                "headline": "Check your Kanban board",
+                "description": "Review backlog, in-progress work, and completed tasks.",
+            })
     con.commit()
     return output
 
@@ -365,15 +417,17 @@ def command(args: argparse.Namespace) -> None:
         emit({"ok": True, "backlog": counts.get("Backlog", 0), "in_progress": counts.get("In Progress", 0), "todo": counts.get("In Progress", 0), "completed": counts.get("Completed", 0), "remaining": counts.get("Backlog", 0) + counts.get("In Progress", 0)})
     elif args.action == "settings":
         if args.key and args.value is not None:
-            allowed = {"lead_minutes", "notify_at_start", "notify_missed"}
+            allowed = {"lead_minutes", "notify_at_start", "notify_missed", "kanban_reminder_hours"}
             if args.key not in allowed:
                 fail("Unknown setting")
             if args.key == "lead_minutes" and (not args.value.isdigit() or int(args.value) < 0 or int(args.value) > 180):
                 fail("lead_minutes must be between 0 and 180")
-            if args.key != "lead_minutes" and args.value not in {"0", "1"}:
+            if args.key == "kanban_reminder_hours" and (not args.value.isdigit() or int(args.value) < 1 or int(args.value) > 24):
+                fail("kanban_reminder_hours must be between 1 and 24")
+            if args.key not in {"lead_minutes", "kanban_reminder_hours"} and args.value not in {"0", "1"}:
                 fail(f"{args.key} must be 0 or 1")
             con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", (args.key, args.value)); con.commit()
-        values = {row["key"]: row["value"] for row in con.execute("SELECT key,value FROM settings WHERE key IN ('timezone','lead_minutes','notify_at_start','notify_missed')")}
+        values = {row["key"]: row["value"] for row in con.execute("SELECT key,value FROM settings WHERE key IN ('timezone','lead_minutes','notify_at_start','notify_missed','kanban_reminder_hours')")}
         emit({"ok": True, "settings": values})
     elif args.action == "add":
         title, due_date, due_time = parse_due_tokens(args.title, args.due or "", args.due_time or "")
@@ -415,6 +469,7 @@ def command(args: argparse.Namespace) -> None:
                     subprocess.run(["omarchy", "notification", "send", "--app-name", "study-planner", notification["headline"], notification["description"]], check=False, timeout=5)
                 except (FileNotFoundError, subprocess.TimeoutExpired):
                     pass
+                play_notification_sound()
         emit({"ok": True, "notifications": notifications, "agenda": agenda(con)})
     con.close()
 

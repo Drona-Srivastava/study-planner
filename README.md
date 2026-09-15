@@ -46,15 +46,22 @@ The board is arranged in three columns. Each card has a checklist control, a
 
 ## Reminder settings
 
-The defaults are a 10-minute reminder and a start-time reminder. Missed-block
-notifications are disabled by default. They can be changed with:
+The defaults are a 10-minute reminder, a start-time reminder, and a Kanban
+check reminder every 4 hours. Agenda and Kanban notifications play the
+standard system sound at `/usr/share/sounds/freedesktop/stereo/message-new-instant.oga`
+when available. Missed-block notifications are disabled by default. They can
+be changed with:
 
 ```bash
 python3 ~/.config/omarchy/plugins/study-planner/planner.py settings
 python3 ~/.config/omarchy/plugins/study-planner/planner.py settings lead_minutes 15
 python3 ~/.config/omarchy/plugins/study-planner/planner.py settings notify_at_start 0
 python3 ~/.config/omarchy/plugins/study-planner/planner.py settings notify_missed 1
+python3 ~/.config/omarchy/plugins/study-planner/planner.py settings kanban_reminder_hours 4
 ```
+
+Set `STUDY_PLANNER_SOUND_FILE` to choose another local sound, or
+`STUDY_PLANNER_NO_SOUND=1` to disable sounds.
 
 ## Development validation
 
