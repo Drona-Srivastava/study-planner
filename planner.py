@@ -106,10 +106,14 @@ def init_db(con: sqlite3.Connection) -> None:
         "lead_minutes": "10",
         "notify_at_start": "1",
         "notify_missed": "0",
-        "kanban_reminder_hours": "4",
+        "kanban_reminder_minutes": "30",
         "kanban_last_reminder_at": "",
     }
     con.executemany("INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)", defaults.items())
+    # Migrate the former four-hour setting to the new 30-minute default.
+    if con.execute("SELECT 1 FROM settings WHERE key='kanban_reminder_hours'").fetchone():
+        con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('kanban_reminder_minutes','30')")
+        con.execute("DELETE FROM settings WHERE key='kanban_reminder_hours'")
     columns = {row["name"] for row in con.execute("PRAGMA table_info(tasks)")}
     if "due_time" not in columns:
         con.execute("ALTER TABLE tasks ADD COLUMN due_time TEXT NOT NULL DEFAULT ''")
@@ -344,7 +348,7 @@ def due_notifications(con: sqlite3.Connection) -> list[dict[str, str]]:
             continue
         con.execute("INSERT INTO notification_log(notification_key,sent_at) VALUES(?,?)", (key, iso_now()))
         output.append({"key": key, "headline": headline, "description": description})
-    hours = int(con.execute("SELECT value FROM settings WHERE key='kanban_reminder_hours'").fetchone()[0])
+    minutes = int(con.execute("SELECT value FROM settings WHERE key='kanban_reminder_minutes'").fetchone()[0])
     last_value = con.execute("SELECT value FROM settings WHERE key='kanban_last_reminder_at'").fetchone()[0]
     if not last_value:
         con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('kanban_last_reminder_at',?)", (iso_now(),))
@@ -352,8 +356,8 @@ def due_notifications(con: sqlite3.Connection) -> list[dict[str, str]]:
         try:
             elapsed = (now() - dt.datetime.fromisoformat(last_value)).total_seconds()
         except ValueError:
-            elapsed = hours * 3600
-        if elapsed >= hours * 3600:
+            elapsed = minutes * 60
+        if elapsed >= minutes * 60:
             key = f"kanban:{now().date().isoformat()}:{now().strftime('%H%M')}"
             con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES('kanban_last_reminder_at',?)", (iso_now(),))
             output.append({
@@ -417,17 +421,17 @@ def command(args: argparse.Namespace) -> None:
         emit({"ok": True, "backlog": counts.get("Backlog", 0), "in_progress": counts.get("In Progress", 0), "todo": counts.get("In Progress", 0), "completed": counts.get("Completed", 0), "remaining": counts.get("Backlog", 0) + counts.get("In Progress", 0)})
     elif args.action == "settings":
         if args.key and args.value is not None:
-            allowed = {"lead_minutes", "notify_at_start", "notify_missed", "kanban_reminder_hours"}
+            allowed = {"lead_minutes", "notify_at_start", "notify_missed", "kanban_reminder_minutes"}
             if args.key not in allowed:
                 fail("Unknown setting")
             if args.key == "lead_minutes" and (not args.value.isdigit() or int(args.value) < 0 or int(args.value) > 180):
                 fail("lead_minutes must be between 0 and 180")
-            if args.key == "kanban_reminder_hours" and (not args.value.isdigit() or int(args.value) < 1 or int(args.value) > 24):
-                fail("kanban_reminder_hours must be between 1 and 24")
-            if args.key not in {"lead_minutes", "kanban_reminder_hours"} and args.value not in {"0", "1"}:
+            if args.key == "kanban_reminder_minutes" and (not args.value.isdigit() or int(args.value) < 1 or int(args.value) > 1440):
+                fail("kanban_reminder_minutes must be between 1 and 1440")
+            if args.key not in {"lead_minutes", "kanban_reminder_minutes"} and args.value not in {"0", "1"}:
                 fail(f"{args.key} must be 0 or 1")
             con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", (args.key, args.value)); con.commit()
-        values = {row["key"]: row["value"] for row in con.execute("SELECT key,value FROM settings WHERE key IN ('timezone','lead_minutes','notify_at_start','notify_missed','kanban_reminder_hours')")}
+        values = {row["key"]: row["value"] for row in con.execute("SELECT key,value FROM settings WHERE key IN ('timezone','lead_minutes','notify_at_start','notify_missed','kanban_reminder_minutes')")}
         emit({"ok": True, "settings": values})
     elif args.action == "add":
         title, due_date, due_time = parse_due_tokens(args.title, args.due or "", args.due_time or "")

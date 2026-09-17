@@ -60,7 +60,7 @@ omarchy restart shell</pre>
 </ul>
 
 <h3>3.4 PlannerService.qml</h3>
-<p>The service runs <code>planner.py reminders</code> every 30 seconds. The Python backend decides whether an agenda notification or the four-hour Kanban check is due and deduplicates notifications in SQLite/settings. The QML service does not duplicate the reminder logic.</p>
+<p>The service runs <code>planner.py reminders</code> every 30 seconds. The Python backend decides whether an agenda notification or the 30-minute Kanban check is due and deduplicates notifications in SQLite/settings. The QML service does not duplicate the reminder logic.</p>
 
 <h3>3.5 planner.py</h3>
 <p>The backend uses only Python's standard library: <code>sqlite3</code>, <code>argparse</code>, <code>datetime</code>, <code>zipfile</code>, XML parsing, subprocess, and filesystem utilities.</p>
@@ -71,7 +71,7 @@ omarchy restart shell</pre>
 <tr><td><code>import_documents</code></td><td>Import timetable blocks and contest events into the database.</td></tr>
 <tr><td><code>agenda</code></td><td>Return today's relevant rows, class display names, current block, and next block.</td></tr>
 <tr><td><code>display_title</code></td><td>Map course codes to friendly names such as Drones Lab and Embedded Class.</td></tr>
-<tr><td><code>due_notifications</code></td><td>Calculate lead/start/missed agenda reminders and four-hour Kanban checks, writing state to prevent repeats.</td></tr>
+<tr><td><code>due_notifications</code></td><td>Calculate lead/start/missed agenda reminders and 30-minute Kanban checks, writing state to prevent repeats.</td></tr>
 <tr><td>CLI handlers</td><td>Implement <code>init</code>, <code>agenda</code>, <code>tasks</code>, <code>add</code>, <code>move</code>, <code>delete</code>, block completion, <code>reminders</code>, and <code>settings</code>.</td></tr>
 </table>
 
@@ -107,12 +107,12 @@ omarchy restart shell</pre>
 <tr><td>BCSE428L</td><td>Drones Class</td></tr></table>
 
 <h2>7. Reminder behavior</h2>
-<p>Default settings are a 10-minute lead reminder, a reminder at block start, and a Kanban-board reminder every 4 hours. Missed-block reminders are disabled by default. Agenda and Kanban notifications play the standard Freedesktop sound <code>/usr/share/sounds/freedesktop/stereo/message-new-instant.oga</code> when available. Settings can be viewed or changed with:</p>
+<p>Default settings are a 10-minute lead reminder, a reminder at block start, and a Kanban-board reminder every 30 minutes. Missed-block reminders are disabled by default. Agenda and Kanban notifications play the standard Freedesktop sound <code>/usr/share/sounds/freedesktop/stereo/message-new-instant.oga</code> when available. Settings can be viewed or changed with:</p>
 <pre>python3 planner.py settings
 python3 planner.py settings lead_minutes 15
 python3 planner.py settings notify_at_start 0
 python3 planner.py settings notify_missed 1
-python3 planner.py settings kanban_reminder_hours 4</pre>
+python3 planner.py settings kanban_reminder_minutes 30</pre>
 <p>Set <code>STUDY_PLANNER_SOUND_FILE</code> to use another local audio file, or set <code>STUDY_PLANNER_NO_SOUND=1</code> to disable sound playback.</p>
 <p>Reminder keys combine the date, block ID, and reminder type. This prevents the 30-second service loop from repeatedly notifying for the same event.</p>
 

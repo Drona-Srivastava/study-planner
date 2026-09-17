@@ -47,8 +47,8 @@ The board is arranged in three columns. Each card has a checklist control, a
 ## Reminder settings
 
 The defaults are a 10-minute reminder, a start-time reminder, and a Kanban
-check reminder every 4 hours. The first Kanban reminder is scheduled four
-hours after the plugin service starts, then repeats every four hours without
+check reminder every 30 minutes. The first Kanban reminder is scheduled 30
+minutes after the plugin service starts, then repeats every 30 minutes without
 duplicating reminders during the 30-second polling loop. Agenda and Kanban
 notifications play the standard system sound at
 `/usr/share/sounds/freedesktop/stereo/message-new-instant.oga` when available;
@@ -60,7 +60,7 @@ python3 ~/.config/omarchy/plugins/study-planner/planner.py settings
 python3 ~/.config/omarchy/plugins/study-planner/planner.py settings lead_minutes 15
 python3 ~/.config/omarchy/plugins/study-planner/planner.py settings notify_at_start 0
 python3 ~/.config/omarchy/plugins/study-planner/planner.py settings notify_missed 1
-python3 ~/.config/omarchy/plugins/study-planner/planner.py settings kanban_reminder_hours 4
+python3 ~/.config/omarchy/plugins/study-planner/planner.py settings kanban_reminder_minutes 30
 ```
 
 Set `STUDY_PLANNER_SOUND_FILE` to choose another local sound, or

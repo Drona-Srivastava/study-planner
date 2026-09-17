@@ -60,6 +60,23 @@ def test_database_and_tasks():
         planner.STATE_DIR = old
 
 
+def test_kanban_reminder_defaults_to_30_minutes():
+    with tempfile.TemporaryDirectory() as directory:
+        old = planner.STATE_DIR
+        planner.STATE_DIR = Path(directory)
+        con = planner.connect()
+        planner.init_db(con)
+        value = con.execute(
+            "SELECT value FROM settings WHERE key='kanban_reminder_minutes'"
+        ).fetchone()[0]
+        assert value == "30"
+        assert con.execute(
+            "SELECT 1 FROM settings WHERE key='kanban_reminder_hours'"
+        ).fetchone() is None
+        con.close()
+        planner.STATE_DIR = old
+
+
 def test_due_tokens_and_columns():
     title, date, time = planner.parse_due_tokens("GATE form due on @14-08-26 @@13:00")
     assert title == "GATE form due on"
