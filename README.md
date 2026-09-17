@@ -72,4 +72,48 @@ Set `STUDY_PLANNER_SOUND_FILE` to choose another local sound, or
 omarchy plugin validate .
 qmllint BarWidget.qml PlannerPanel.qml PlannerService.qml
 STUDY_PLANNER_STATE_DIR=/tmp/study-planner-test python3 planner.py init
+
+## iPhone PWA and Web Push
+
+The repository also includes a mobile PWA and a cloud API. The API and worker
+share a SQLite volume; the worker sends agenda and task due-time notifications
+to subscribed Home Screen web apps.
+
+Deploy with Docker on a VPS whose DNS points to the server:
+
+```bash
+cp .env.example .env
+# Set the domain, long password, session secret, and VAPID keys in .env.
+docker compose up -d --build
 ```
+
+To migrate the existing desktop database before starting the worker:
+
+```bash
+STUDY_PLANNER_STATE_DIR=~/.local/state/omarchy/study-planner \
+  python3 tools/export_data.py > migration.json
+docker compose cp migration.json api:/tmp/migration.json
+docker compose exec api python tools/import_data.py /tmp/migration.json
+rm migration.json
+```
+
+The `STUDY_PLANNER_VAPID_PUBLIC_KEY` and private key must be generated as a
+matching pair using the `py-vapid` tooling or another Web Push VAPID utility.
+Never commit `.env` or the private key. Caddy
+provides HTTPS automatically once the domain resolves. On the iPhone, open the
+HTTPS URL in Safari, use Share → Add to Home Screen, sign in, and tap Enable
+notifications. Web Push is supported for Home Screen web apps on iOS 16.4+.
+
+### Split deployment: Vercel frontend
+
+In Vercel, import this repository and set the project Root Directory to
+`web`. Select “Other” as the framework and leave the build command empty.
+After the backend has a public HTTPS URL, set that URL in
+`web/config.js` as `window.STUDY_PLANNER_API_URL`. Add the Vercel URL to
+`STUDY_PLANNER_ALLOWED_ORIGINS` in the backend environment.
+
+Do not deploy the current SQLite backend as a Vercel Function: Functions are
+request-based and cannot host the continuously running reminder worker. The
+Docker deployment above is the reliable option. Render can host the API for
+free for testing, but its free web services sleep and have no persistent local
+disk; use a persistent database or paid disk for real reminders and data.

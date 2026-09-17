@@ -1,0 +1,50 @@
+properties:
+  managedEnvironmentId: /subscriptions/2e343d2b-52f3-465c-b23c-c32ef2ca365f/resourceGroups/study-planner-rg/providers/Microsoft.App/managedEnvironments/study-planner-env
+  configuration:
+    activeRevisionsMode: Single
+    ingress:
+      external: true
+      targetPort: 8000
+      transport: auto
+    registries:
+      - server: ca3482040a12acr.azurecr.io
+        username: ca3482040a12acr
+        passwordSecretRef: ca3482040a12acrazurecrio-ca3482040a12acr
+    secrets:
+      - name: planner-password
+      - name: session-secret
+      - name: vapid-public
+      - name: vapid-private
+      - name: ca3482040a12acrazurecrio-ca3482040a12acr
+      - name: azure-storage
+  template:
+    containers:
+      - name: study-planner-api
+        image: ca3482040a12acr.azurecr.io/study-planner:vercel
+        resources:
+          cpu: 0.25
+          memory: 0.5Gi
+        env:
+          - name: STUDY_PLANNER_STATE_DIR
+            value: /tmp/study-planner-state
+          - name: STUDY_PLANNER_USERNAME
+            value: planner
+          - name: STUDY_PLANNER_PASSWORD
+            secretRef: planner-password
+          - name: STUDY_PLANNER_SESSION_SECRET
+            secretRef: session-secret
+          - name: STUDY_PLANNER_COOKIE_SECURE
+            value: "1"
+          - name: STUDY_PLANNER_VAPID_PUBLIC_KEY
+            secretRef: vapid-public
+          - name: STUDY_PLANNER_VAPID_PRIVATE_KEY
+            secretRef: vapid-private
+          - name: STUDY_PLANNER_VAPID_SUBJECT
+            value: mailto:srivastavadrona@gmail.com
+          - name: STUDY_PLANNER_AZURE_STORAGE_CONNECTION_STRING
+            secretRef: azure-storage
+          - name: STUDY_PLANNER_ALLOWED_ORIGIN_REGEX
+            value: 'https://.*\.vercel\.app'
+    scale:
+      minReplicas: 1
+      maxReplicas: 1

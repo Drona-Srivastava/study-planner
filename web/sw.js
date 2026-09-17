@@ -1,0 +1,2 @@
+self.addEventListener('push', event => { let data={title:'Study Planner',body:'You have a reminder'}; try{data=event.data.json()}catch(e){} event.waitUntil(self.registration.showNotification(data.headline||data.title,{body:data.description||data.body,icon:'/icon.svg',badge:'/icon.svg',tag:data.key||'study-planner'})); });
+self.addEventListener('notificationclick', event => { event.notification.close(); event.waitUntil(clients.openWindow('/')); });

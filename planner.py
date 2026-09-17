@@ -44,8 +44,9 @@ def fail(message: str, code: int = 1) -> None:
 
 def connect() -> sqlite3.Connection:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(STATE_DIR / "planner.db")
+    con = sqlite3.connect(STATE_DIR / "planner.db", timeout=30)
     con.row_factory = sqlite3.Row
+    con.execute("PRAGMA busy_timeout = 30000")
     con.execute("PRAGMA foreign_keys = ON")
     return con
 
@@ -98,6 +99,11 @@ def init_db(con: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS notification_log (
             notification_key TEXT PRIMARY KEY,
             sent_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            endpoint TEXT PRIMARY KEY,
+            subscription_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
         );
         """
     )
@@ -348,6 +354,16 @@ def due_notifications(con: sqlite3.Connection) -> list[dict[str, str]]:
             continue
         con.execute("INSERT INTO notification_log(notification_key,sent_at) VALUES(?,?)", (key, iso_now()))
         output.append({"key": key, "headline": headline, "description": description})
+    # Task reminders use the same lead-time setting as agenda blocks. A task
+    # is reminded once when its due date/time enters the lead window.
+    today = now().date().isoformat()
+    for task in con.execute("SELECT * FROM tasks WHERE due_date=? AND due_time<>'' AND column_name<>'Completed'", (today,)).fetchall():
+        due = int(task["due_time"][:2]) * 60 + int(task["due_time"][3:])
+        if due - lead <= now_minutes <= due:
+            key = f"task:{today}:{task['id']}:due"
+            if not con.execute("SELECT 1 FROM notification_log WHERE notification_key=?", (key,)).fetchone():
+                con.execute("INSERT INTO notification_log(notification_key,sent_at) VALUES(?,?)", (key, iso_now()))
+                output.append({"key": key, "headline": f"Task due: {task['title']}", "description": task["due_time"]})
     minutes = int(con.execute("SELECT value FROM settings WHERE key='kanban_reminder_minutes'").fetchone()[0])
     last_value = con.execute("SELECT value FROM settings WHERE key='kanban_last_reminder_at'").fetchone()[0]
     if not last_value:

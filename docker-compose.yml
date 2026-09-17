@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes: [planner-data:/data]
+    expose: ["8000"]
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "server.worker"]
+    env_file: .env
+    volumes: [planner-data:/data]
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      STUDY_PLANNER_DOMAIN: ${STUDY_PLANNER_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [api]
+volumes:
+  planner-data:
+  caddy-data:
+  caddy-config:

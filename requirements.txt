@@ -1,0 +1,4 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pywebpush==2.3.0
+azure-storage-file-share==12.22.0

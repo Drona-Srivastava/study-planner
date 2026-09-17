@@ -82,3 +82,20 @@ def test_due_tokens_and_columns():
     assert title == "GATE form due on"
     assert date == "2026-08-14"
     assert time == "13:00"
+
+
+def test_due_task_generates_one_notification():
+    with tempfile.TemporaryDirectory() as directory:
+        old = planner.STATE_DIR
+        planner.STATE_DIR = Path(directory)
+        con = planner.connect()
+        planner.init_db(con)
+        current = planner.now()
+        due = current.strftime("%H:%M")
+        con.execute("INSERT INTO tasks(title,due_date,due_time,created_at) VALUES (?,?,?,?)", ("Review arrays", current.date().isoformat(), due, planner.iso_now()))
+        con.commit()
+        result = planner.due_notifications(con)
+        assert any(item["headline"] == "Task due: Review arrays" for item in result)
+        assert not any(item["headline"] == "Task due: Review arrays" for item in planner.due_notifications(con))
+        con.close()
+        planner.STATE_DIR = old
